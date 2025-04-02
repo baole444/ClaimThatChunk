@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "claim_that_chunk",
+  "version": "${version}",
+  "name": "ClaimThatChunk",
+  "description": "A mod that allow claiming chunks and add members with permissions",
+  "authors": [],
+  "contact": {},
+  "license": "GPL-3.0",
+  "icon": "assets/claim_that_chunk/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "Sky.Cat.CTC.client.MainClient"
+    ],
+    "main": [
+      "Sky.Cat.CTC.Main"
+    ]
+  },
+  "mixins": [
+    "claim_that_chunk.mixins.json",
+    {
+      "config": "claim_that_chunk.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
