@@ -1,5 +1,6 @@
 package Sky.Cat.Team;
 
+import Sky.Cat.CTC.permission.PermType;
 import Sky.Cat.CTC.permission.Permission;
 import net.minecraft.world.entity.player.Player;
 
@@ -39,30 +40,37 @@ public class Team {
     //
     public Team(UUID leaderID, String leaderName, String teamName) {
         this.teamId = UUID.randomUUID();
+
         if (teamName.isBlank()) {
             this.teamName = leaderName +  "'s Team";
         } else {
             this.teamName = teamName;
         }
+
         this.leaderUUID = leaderID;
         this.leaderName = leaderName;
+
         this.teamMember = new HashMap<>();
+
+        // Set the team default permission which will be assigned to newly added member.
+        this.defaultPermission = new Permission();
+        defaultPermission.setPermission(PermType.BUILD, true);
+        defaultPermission.setPermission(PermType.INTERACT, true);
+
         this.createTIme = System.currentTimeMillis();
 
-    }
-
-    public Team(UUID teamId, String teamName, UUID leaderUUID, Map<UUID, TeamMember> teamMember, Permission defaultPermission, int teamSizeLimit, long createTIme) {
-        this.teamId = teamId;
-        this.teamName = teamName;
-        this.leaderUUID = leaderUUID;
-        this.teamMember = teamMember;
-        this.defaultPermission = defaultPermission;
-        this.teamSizeLimit = teamSizeLimit;
-        this.createTIme = createTIme;
+        // Add leader to the team member
+        try {
+            TeamMember leader = new TeamMember(leaderUUID, leaderName);
+            leader.getPermission().grantAllPermission();
+            this.teamMember.put(leaderUUID, leader);
+        } catch (IllegalAccessException e) {
+            System.out.println("Failed to add leader as a member due to inaccessible permissions.");
+        }
     }
 
     public boolean addMember(UUID uuid, String name) {
-
+        TeamManager teamManager = TeamManager.getInstance();
 
         return false;
     }

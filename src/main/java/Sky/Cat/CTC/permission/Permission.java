@@ -1,5 +1,8 @@
 package Sky.Cat.CTC.permission;
 
+import java.lang.reflect.Field;
+import java.util.List;
+
 public class Permission {
     // Allow adding new member to the team.
     private boolean allowInvite;
@@ -24,6 +27,20 @@ public class Permission {
 
     // Allow disbandment of the team.
     private boolean allowDisband;
+
+    /**
+     * Initiate permission with all nodes to false;
+     */
+    public Permission() {
+        allowInvite = false;
+        allowKick = false;
+        allowClaim = false;
+        allowBuild = false;
+        allowBreak = false;
+        allowInteract = false;
+        allowModifyPermission = false;
+        allowDisband = false;
+    }
 
     /**
      * Check for permission.
@@ -66,6 +83,17 @@ public class Permission {
                 Throwable cause = new Throwable("Unhandled permission type: '" + type + "'.");
                 throw new IllegalArgumentException("Performed update on unknown permission type.", cause);
             }
+        }
+    }
+
+    public void grantAllPermission() throws IllegalAccessException {
+        Field[] fields = this.getClass().getDeclaredFields();
+        for (Field field : fields) {
+            field.setAccessible(true);
+            if (field.getType() == Boolean.class) {
+                field.setBoolean(this, true);
+            }
+            field.setAccessible(false);
         }
     }
 }

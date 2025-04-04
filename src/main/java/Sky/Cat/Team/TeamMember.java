@@ -1,7 +1,6 @@
 package Sky.Cat.Team;
 
 import Sky.Cat.CTC.permission.Permission;
-import net.minecraft.world.entity.player.Player;
 
 import java.util.UUID;
 
@@ -11,6 +10,22 @@ public class TeamMember {
     private String playerName;
 
     private Permission permission;
+
+    private final long teamJoinTime;
+
+    public TeamMember(UUID playerUUID, String playerName) {
+        this.playerUUID = playerUUID;
+        this.playerName = playerName;
+        this.permission = new Permission();
+        this.teamJoinTime = System.currentTimeMillis();
+    }
+
+    public TeamMember(UUID playerUUID, String playerName, Permission permission) {
+        this.playerUUID = playerUUID;
+        this.playerName = playerName;
+        this.permission = permission;
+        this.teamJoinTime = System.currentTimeMillis();
+    }
 
     public UUID getPlayerUUID() {
         return playerUUID;
@@ -34,5 +49,13 @@ public class TeamMember {
 
     public void setPermission(Permission permission) {
         this.permission = permission;
+    }
+
+    public long getTeamJoinTime() {
+        return this.teamJoinTime;
+    }
+
+    public boolean hasJoinedTeamAtLeast(long durationMillis) {
+        return System.currentTimeMillis() - teamJoinTime >= durationMillis;
     }
 }
