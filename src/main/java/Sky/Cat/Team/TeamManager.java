@@ -8,16 +8,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-
-import Sky.Cat.CTC.permission.PermType;
-import Sky.Cat.CTC.permission.Permission;
-import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.nbt.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.WorldSavePath;
-import net.minecraft.world.PersistentState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,23 +19,26 @@ public class TeamManager{
     // The singleton instance of TeamManager.
     private static TeamManager ManagerInstance;
 
-    // Mapping of all existing teams.
-    private Map<UUID, Team> teams;
-
     // Mapping between player's uuid and team uuid.
     private Map<UUID, UUID> playerTeamMap;
 
+    // Logger
     private static final Logger LOGGER = LoggerFactory.getLogger("ClaimThatChunk");
 
-    private static final String SAVE_FILE_NAME = "claim_that_chunk_teams.dat";
+    // Reference for persistent state
+    private TeamState teamState;
 
     private MinecraftServer server;
 
+    // Private constructor for singleton
     private TeamManager() {
-        this.teams = new ConcurrentHashMap<>();
         this.playerTeamMap = new ConcurrentHashMap<>();
     }
 
+    /**
+     * Get or create the singleton instance of TeamManager.
+     * @return the TeamManager instance.
+     */
     public static TeamManager getInstance() {
         if (ManagerInstance == null) {
             ManagerInstance = new TeamManager();
@@ -49,66 +46,25 @@ public class TeamManager{
         return ManagerInstance;
     }
 
-    // Permission codec
-    public static final Codec<Permission> PERMISSION_CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.BOOL.fieldOf("invite").forGetter(p -> p.hasPermission(PermType.INVITE)),
-            Codec.BOOL.fieldOf("kick").forGetter(p -> p.hasPermission(PermType.KICK)),
-            Codec.BOOL.fieldOf("claim").forGetter(p -> p.hasPermission(PermType.CLAIM)),
-            Codec.BOOL.fieldOf("build").forGetter(p -> p.hasPermission(PermType.BUILD)),
-            Codec.BOOL.fieldOf("break").forGetter(p -> p.hasPermission(PermType.BREAK)),
-            Codec.BOOL.fieldOf("interact").forGetter(p -> p.hasPermission(PermType.INTERACT)),
-            Codec.BOOL.fieldOf("modifyPermission").forGetter(p -> p.hasPermission(PermType.MODIFY_PERMISSION)),
-            Codec.BOOL.fieldOf("disband").forGetter(p -> p.hasPermission(PermType.DISBAND))
-    ).apply(instance, (invite, kick, claim, build, brk, interact, modifyPerm, disband) -> {
-        Permission permission = new Permission();
-
-        // Apply values to new permission instance.
-        permission.setPermission(PermType.INVITE, invite);
-        permission.setPermission(PermType.KICK, kick);
-        permission.setPermission(PermType.CLAIM, claim);
-        permission.setPermission(PermType.BUILD, build);
-        permission.setPermission(PermType.BREAK, brk);
-        permission.setPermission(PermType.INTERACT, interact);
-        permission.setPermission(PermType.MODIFY_PERMISSION, modifyPerm);
-        permission.setPermission(PermType.DISBAND, disband);
-
-        return permission;
-    }));
-
-    // Team member codec.
-    public static final Codec<TeamMember> TEAM_MEMBER_CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.xmap(UUID::fromString, UUID::toString).fieldOf("uuid").forGetter(TeamMember::getPlayerUUID),
-            Codec.STRING.fieldOf("name").forGetter(TeamMember::getPlayerName),
-            PERMISSION_CODEC.fieldOf("permission").forGetter(TeamMember::getPermission),
-            Codec.LONG.fieldOf("joinTime").forGetter(TeamMember::getTeamJoinTime)
-    ).apply(instance, TeamMember::fromPersistence));
-
-    // Team codec.
-    public static final Codec<Team> TEAM_CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.xmap(UUID::fromString, UUID::toString).fieldOf("teamId").forGetter(Team::getTeamId),
-            Codec.STRING.fieldOf("teamName").forGetter(Team::getTeamName),
-            Codec.STRING.xmap(UUID::fromString, UUID::toString).fieldOf("leaderUUID").forGetter(Team::getLeaderUUID),
-            Codec.STRING.fieldOf("leaderName").forGetter(Team::getLeaderName),
-            Codec.unboundedMap(
-                    Codec.STRING.xmap(UUID::fromString, UUID::toString),
-                    TEAM_MEMBER_CODEC
-            ).fieldOf("teamMembers").forGetter(Team::getTeamMember),
-            PERMISSION_CODEC.fieldOf("defaultPermission").forGetter(Team::getDefaultPermission),
-            Codec.INT.fieldOf("teamSizeLimit").forGetter(Team::getTeamSizeLimit),
-            Codec.LONG.fieldOf("createTime").forGetter(Team::getCreateTime)
-    ).apply(instance, Team::fromCodec));
-
-
-    // Team mapping coded.
-    public static final Codec<Map<UUID, Team>> TEAMS_CODEC = Codec.unboundedMap(
-            Codec.STRING.xmap(UUID::fromString, UUID::toString),
-            TEAM_CODEC
-    );
-
+    /**
+     * Set the server instance for TeamManager instance.
+     * @param server the current minecraft server instance.
+     */
     public void setServer(MinecraftServer server) {
         this.server = server;
+        if (server != null) {
+            this.teamState = TeamState.getOrCreate(server);
+            rebuildPlayerTeamMap();
+        }
     }
 
+    /**
+     * Create a new team with the creator as the leader.
+     * @param creatorId the uuid of the player that created the team.
+     * @param creatorName the name of the player that created the team.
+     * @param teamName the name of the team.
+     * @return the newly created team or null if player already in a team.
+     */
     public Team createTeam(UUID creatorId, String creatorName, String teamName) {
         if (playerTeamMap.containsKey(creatorId)) {
             return null; // Cannot create team when is already in one.
@@ -116,16 +72,20 @@ public class TeamManager{
 
         Team newTeam = new Team(creatorId, creatorName, teamName);
 
-        teams.put(newTeam.getTeamId(), newTeam);
-        playerTeamMap.put(creatorId, newTeam.getTeamId());
+        teamState.addTeam(newTeam);
 
-        saveTeams();
+        playerTeamMap.put(creatorId, newTeam.getTeamId());
 
         return newTeam;
     }
 
+    /**
+     * Disband a team and remove all its members.
+     * @param teamId the uuid of the team to disband.
+     * @return true on disbanding successfully, false if no team founded.
+     */
     public boolean disbandTeam(UUID teamId) {
-        Team disbandTeam = teams.get(teamId);
+        Team disbandTeam = getTeamById(teamId);
 
         if (disbandTeam == null) return false;
 
@@ -133,11 +93,7 @@ public class TeamManager{
             playerTeamMap.remove(playerId);
         }
 
-        teams.remove(teamId);
-
-        saveTeams();
-
-        return true;
+        return teamState.removeTeam(teamId);
     }
 
     /**
@@ -146,7 +102,7 @@ public class TeamManager{
      * @return The team or null if such a team doesn't exist.
      */
     public Team getTeamById(UUID teamId) {
-        return teams.get(teamId);
+        return teamState.getTeams().get(teamId);
     }
 
     /**
@@ -159,7 +115,7 @@ public class TeamManager{
         if (teamId == null) {
             return null;
         }
-        return teams.get(teamId);
+        return getTeamById(teamId);
     }
 
     /***
@@ -172,14 +128,14 @@ public class TeamManager{
     public boolean addPlayerToTeam(UUID teamId, UUID playerUUID, String playerName) {
         if (playerTeamMap.containsKey(playerUUID)) return false; // Player already belong to a team
 
-        Team team = teams.get(teamId);
+        Team team = getTeamById(teamId);
         if (team == null) return false; // There is no such team in data.
 
         boolean result = team.addMember(playerUUID, playerName);
 
         if (result) {
             playerTeamMap.put(playerUUID, teamId);
-            saveTeams();
+            teamState.markDirty();
         }
         return result;
     }
@@ -196,7 +152,7 @@ public class TeamManager{
 
         if (teamId == null) return false; // There is no team to remove from.
 
-        Team team = teams.get(teamId);
+        Team team = getTeamById(teamId);
 
         // This condition is impossible to happen unless data is tampered outside the game's management,
         // (e.g., manually edited by user.)
@@ -209,7 +165,7 @@ public class TeamManager{
 
         if (result) {
             playerTeamMap.remove(playerUUID);
-            saveTeams();
+            teamState.markDirty();
         }
 
         return result;
@@ -221,7 +177,7 @@ public class TeamManager{
     private void rebuildPlayerTeamMap() {
         playerTeamMap.clear();
 
-        for (Map.Entry<UUID, Team> entry : teams.entrySet()) {
+        for (Map.Entry<UUID, Team> entry : teamState.getTeams().entrySet()) {
             UUID teamId = entry.getKey();
             Team team = entry.getValue();
 
@@ -229,87 +185,31 @@ public class TeamManager{
                 playerTeamMap.put(playerUUID, teamId);
             }
         }
+
+        LOGGER.info("Rebuilt player-team map with {} player mappings", playerTeamMap.size());
     }
 
-    public void saveTeams() {
-        if (server == null) {
-            LOGGER.error("Cannot save teams: server is null.");
-            return;
-        }
-
-        try {
-            Path saveDir = server.getSavePath(WorldSavePath.ROOT).resolve("data");
-            Files.createDirectories(saveDir);
-            File saveFile = saveDir.resolve(SAVE_FILE_NAME).toFile();
-
-            NbtCompound rootTag = new NbtCompound();
-
-            NbtCompound teamsCompound = new NbtCompound();
-
-            for (Map.Entry<UUID, Team> entry : teams.entrySet()) {
-                String uuidString = entry.getKey().toString();
-                Team team = entry.getValue();
-
-                DataResult<NbtElement> result = TEAM_CODEC.encodeStart(NbtOps.INSTANCE, team);
-                Optional<NbtElement> encoded = result.resultOrPartial(error -> LOGGER.error("Failed to encode teams: {}", error));
-
-                encoded.ifPresent(nbtElement -> teamsCompound.put(uuidString, nbtElement));
-            }
-
-            rootTag.put("teams", teamsCompound);
-
-            NbtIo.writeCompressed(rootTag, saveFile.toPath());
-
-            LOGGER.info("Saved team data ({} teams)", teams.size());
-        } catch (IOException e) {
-            LOGGER.error("Failed to save team data", e);
-        }
-    }
-
+    /**
+     * Load teams from persistent storage.
+     * Called by server lifecycle event.
+     */
     public void loadTeams() {
         if (server == null) {
-            LOGGER.error("Cannot load teams: server is null.");
+            LOGGER.error("Cannot load team: server is null");
             return;
         }
 
-        try {
-            Path saveDir = server.getSavePath(WorldSavePath.ROOT).resolve("data");
-            File saveFile = saveDir.resolve(SAVE_FILE_NAME).toFile();
+        this.teamState = TeamState.getOrCreate(server);
+        rebuildPlayerTeamMap();
 
-            if (!saveFile.exists()) {
-                LOGGER.info("No team data file found, starting with empty data");
-                return;
-            }
-
-            NbtCompound rootTag = NbtIo.readCompressed(saveFile.toPath(), NbtSizeTracker.ofUnlimitedBytes());
-
-            if (rootTag.contains("teams")) {
-                NbtCompound teamsCompound = rootTag.getCompoundOrEmpty("teams");
-                teams.clear();
-
-                for (String key : teamsCompound.getKeys()) {
-                    try {
-                        UUID teamId = UUID.fromString(key);
-                        NbtElement teamElement = teamsCompound.get(key);
-
-                        if (teamElement != null) {
-                            DataResult<Team> result = TEAM_CODEC.parse(NbtOps.INSTANCE, teamElement);
-                            Optional<Team> decodedTeam = result.resultOrPartial(error ->
-                                    LOGGER.error("Failed to decode team {}: {}", key, error));
-
-                            decodedTeam.ifPresent(team -> teams.put(teamId, team));
-                        }
-                    } catch (IllegalArgumentException e) {
-                        LOGGER.error("Invalid team UUID: {}", key);
-                    }
-                    rebuildPlayerTeamMap();
-                    LOGGER.info("Loaded {} teams", teams.size());
-                }
-            } else {
-                LOGGER.error("Failed to decode teams");
-            }
-        } catch (IOException e) {
-            LOGGER.error("Failed to load team data", e);
-        }
+        LOGGER.info("Loaded {} teams from storage", teamState.getTeams().size());
     }
+
+    // For backward compatibility
+    public void saveTeams() {
+        LOGGER.info("Team saving is done automatically");
+    }
+
+
+
 }

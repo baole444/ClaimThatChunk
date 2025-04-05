@@ -2,7 +2,6 @@ package Sky.Cat.Team;
 
 import Sky.Cat.CTC.permission.Permission;
 
-import java.lang.reflect.Field;
 import java.util.UUID;
 
 public class TeamMember {

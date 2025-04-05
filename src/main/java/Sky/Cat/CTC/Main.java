@@ -11,20 +11,18 @@ public class Main implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        LOGGER.info("Initializing ClaimThatChunk mod.");
+        LOGGER.info("Initializing ClaimThatChunk mod");
 
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
-            LOGGER.info("Server starting - initializing TeamManager.");
+            LOGGER.info("Server starting - initializing TeamManager");
             TeamManager manager = TeamManager.getInstance();
             manager.setServer(server);
-            manager.loadTeams();
         });
 
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
-            LOGGER.info("Server stopping - saving TeamManager data.");
-            TeamManager.getInstance().saveTeams();
+            LOGGER.info("Server stopping - saving TeamManager data");
         });
 
-        LOGGER.info("ClaimThatChunk initialization completed.");
+        LOGGER.info("ClaimThatChunk initialization completed");
     }
 }
