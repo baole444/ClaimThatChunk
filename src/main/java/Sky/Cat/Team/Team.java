@@ -2,7 +2,7 @@ package Sky.Cat.Team;
 
 import Sky.Cat.CTC.permission.PermType;
 import Sky.Cat.CTC.permission.Permission;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.entity.player.PlayerEntity;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,7 +35,7 @@ public class Team {
     private int teamSizeLimit;
 
     // Time stamp of when the team was created, can be pass into to create a Date object for display purpose.
-    private long createTIme;
+    private long createTime;
 
     //
     public Team(UUID leaderID, String leaderName, String teamName) {
@@ -57,28 +57,91 @@ public class Team {
         defaultPermission.setPermission(PermType.BUILD, true);
         defaultPermission.setPermission(PermType.INTERACT, true);
 
-        this.createTIme = System.currentTimeMillis();
+        this.createTime = System.currentTimeMillis();
 
         // Add leader to the team member
-        try {
-            TeamMember leader = new TeamMember(leaderUUID, leaderName);
-            leader.getPermission().grantAllPermission();
-            this.teamMember.put(leaderUUID, leader);
-        } catch (IllegalAccessException e) {
-            System.out.println("Failed to add leader as a member due to inaccessible permissions.");
-        }
+        TeamMember leader = new TeamMember(leaderUUID, leaderName);
+        leader.getPermission().grantAllPermission();
+        this.teamMember.put(leaderUUID, leader);
+    }
+
+    // Deserialization method for Team codec.
+    public static Team fromCodec(UUID teamId, String teamName, UUID leaderUUID, String leaderName, Map<UUID, TeamMember> members, Permission defaultPermission, int teamSizeLimit, long createTime) {
+        // Create a team normally.
+        Team team = new Team(leaderUUID, leaderName, teamName);
+
+        // Override its uuid.
+        team.teamId = teamId;
+
+        // Override its members.
+        team.teamMember = new HashMap<>(members);
+
+        // Override its default permissions.
+        team.defaultPermission = defaultPermission;
+
+        // Override its size limit.
+        team.teamSizeLimit = teamSizeLimit;
+
+        // Override its created time.
+        team.createTime = createTime;
+
+        return team;
     }
 
     public boolean addMember(UUID uuid, String name) {
-        TeamManager teamManager = TeamManager.getInstance();
+        if (teamMember.containsKey(uuid)) return false;
 
-        return false;
+        if (teamSizeLimit > 0 && teamMember.size() >= teamSizeLimit) return false;
+
+        TeamMember newMember = new TeamMember(uuid, name, defaultPermission);
+        teamMember.put(uuid, newMember);
+
+        return true;
     }
 
-    public boolean addMember(Player player) {
-        UUID uuid = player.getGameProfile().getId();
-        String name = player.getName().getString();
+    /**
+     * Remove a member of the team.
+     * @param uuid the uuid of the member to be removed.
+     * @return false if it is the team leader / don't exist. True when successfully removed a member.
+     */
+    public boolean removeMember(UUID uuid) {
+        if (uuid.equals(leaderUUID)) {
+            return false; // Cannot remove the current leader.
+        }
 
-        return addMember(uuid, name);
+        // Return true on removing existing uuid.
+        return teamMember.remove(uuid) != null;
+    }
+
+    public UUID getTeamId() {
+        return teamId;
+    }
+
+    public String getTeamName() {
+        return teamName;
+    }
+
+    public UUID getLeaderUUID() {
+        return leaderUUID;
+    }
+
+    public String getLeaderName() {
+        return leaderName;
+    }
+
+    public Map<UUID, TeamMember> getTeamMember() {
+        return teamMember;
+    }
+
+    public Permission getDefaultPermission() {
+        return defaultPermission;
+    }
+
+    public int getTeamSizeLimit() {
+        return teamSizeLimit;
+    }
+
+    public long getCreateTime() {
+        return createTime;
     }
 }

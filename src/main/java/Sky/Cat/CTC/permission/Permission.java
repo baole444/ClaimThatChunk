@@ -86,14 +86,23 @@ public class Permission {
         }
     }
 
-    public void grantAllPermission() throws IllegalAccessException {
-        Field[] fields = this.getClass().getDeclaredFields();
-        for (Field field : fields) {
-            field.setAccessible(true);
-            if (field.getType() == Boolean.class) {
-                field.setBoolean(this, true);
-            }
-            field.setAccessible(false);
+    public void grantAllPermission() {
+        //Field[] fields = this.getClass().getDeclaredFields();
+        //for (Field field : fields) {
+        //    field.setAccessible(true);
+        //    if (field.getType() == Boolean.class) {
+        //        field.setBoolean(this, true);
+        //    }
+        //    field.setAccessible(false);
+        //}
+        for (PermType type : PermType.values()) {
+            this.setPermission(type, true);
+        }
+    }
+
+    public void revokeAllPermission() {
+        for (PermType type : PermType.values()) {
+            this.setPermission(type, false);
         }
     }
 }

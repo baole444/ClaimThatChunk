@@ -2,6 +2,7 @@ package Sky.Cat.Team;
 
 import Sky.Cat.CTC.permission.Permission;
 
+import java.lang.reflect.Field;
 import java.util.UUID;
 
 public class TeamMember {
@@ -25,6 +26,19 @@ public class TeamMember {
         this.playerName = playerName;
         this.permission = permission;
         this.teamJoinTime = System.currentTimeMillis();
+    }
+
+    // Constructor intended for factory only
+    TeamMember(UUID playerUUID, String playerName, Permission permission, long teamJoinTime) {
+        this.playerUUID = playerUUID;
+        this.playerName = playerName;
+        this.permission = new Permission();
+        this.teamJoinTime = teamJoinTime;
+    }
+
+    // Use for Team member codec deserialization.
+    public static TeamMember fromPersistence(UUID playerUUID, String playerName, Permission permission, long joinTime) {
+        return new TeamMember(playerUUID, playerName, permission, joinTime);
     }
 
     public UUID getPlayerUUID() {
