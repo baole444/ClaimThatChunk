@@ -24,13 +24,13 @@ public class TeamNetworking {
         // Could replace this with bit shift operation in a for loop on a perm type.
         // However, it will be sensitive to the enum order.
 
-        // int bit = 1;
-        // for (PermType type : PermType.values()) {
-        //     if (permission.hasPermission(type)) {
-        //         flag |= bit;
-        //     }
-        //     bit <<= 1; // shifting bit to the left to move to the next value
-        // }
+        //int bit = 1;
+        //for (PermType type : PermType.values()) {
+        //    if (permission.hasPermission(type)) {
+        //        flag |= bit;
+        //    }
+        //    bit <<= 1; // shifting bit to the left to move to the next value
+        //}
 
         if (permission.hasPermission(PermType.INVITE)) flags |= 1;
         if (permission.hasPermission(PermType.KICK)) flags |= 2;
@@ -46,9 +46,13 @@ public class TeamNetworking {
 
     // Register handlers method.
     public static void register() {
+        // Server -> Client
         PayloadTypeRegistry.playS2C().register(TeamDataPayload.ID, TeamDataPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(TeamDefaultPermissionPayload.ID, TeamDefaultPermissionPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(TeamMemberUpdatePayload.ID, TeamMemberUpdatePayload.CODEC);
         PayloadTypeRegistry.playS2C().register(TeamDisbandPayload.ID, TeamDisbandPayload.CODEC);
+
+        // Client -> Server
         PayloadTypeRegistry.playC2S().register(RequestTeamDataPayload.ID, RequestTeamDataPayload.CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(RequestTeamDataPayload.ID, (payload, context) -> {
@@ -100,6 +104,20 @@ public class TeamNetworking {
                 playerName,
                 isJoining,
                 permissionToInt(permission)
+        );
+
+        for (UUID memberId : team.getTeamMember().keySet()) {
+            ServerPlayerEntity player = Main.getServer().getPlayerManager().getPlayer(memberId);
+            if (player != null) {
+                ServerPlayNetworking.send(player, payload);
+            }
+        }
+    }
+
+    public static void broadcastTeamDefaultPermissionUpdate(Team team) {
+        TeamDefaultPermissionPayload payload = new TeamDefaultPermissionPayload(
+                team.getTeamId(),
+                permissionToInt(team.getDefaultPermission())
         );
 
         for (UUID memberId : team.getTeamMember().keySet()) {

@@ -154,6 +154,11 @@ public class Team {
         return defaultPermission;
     }
 
+    public Team setDefaultPermission(Permission defaultPermission) {
+        this.defaultPermission = defaultPermission;
+        return this;
+    }
+
     public int getTeamSizeLimit() {
         return teamSizeLimit;
     }

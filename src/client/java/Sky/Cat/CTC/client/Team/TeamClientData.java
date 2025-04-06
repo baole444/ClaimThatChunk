@@ -21,6 +21,7 @@ public class TeamClientData {
     private UUID leaderId;
     private String leaderName;
     private final Map<UUID, ClientTeamMember> members = new HashMap<>();
+    private Permission defaultPermission;
 
     // Flag for checking if the client is in a team or not.
     private boolean hasTeam = false;
@@ -57,6 +58,14 @@ public class TeamClientData {
         }
 
         this.hasTeam = true;
+    }
+
+    /**
+     * Update the team client default permission
+     * @param permissionFlag the permission flag received from the server.
+     */
+    public void updateDefaultPermission(int permissionFlag) {
+        this.defaultPermission = TeamClientNetworking.intToPermission(permissionFlag);
     }
 
     /**

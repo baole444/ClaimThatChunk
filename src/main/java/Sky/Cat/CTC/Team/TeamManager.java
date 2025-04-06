@@ -64,8 +64,9 @@ public class TeamManager{
 
         if (player != null) {
             TeamNetworking.sendTeamDataToPlayer(player, newTeam);
+            TeamNetworking.broadcastTeamDefaultPermissionUpdate(newTeam);
         }
-
+        
         return newTeam;
     }
 
@@ -132,6 +133,26 @@ public class TeamManager{
                 TeamNetworking.sendTeamDataToPlayer(player, team);
             }
         }
+
+        return true;
+    }
+
+    /**
+     * Update team default permissions.
+     * @param teamId uuid of the team that has its default permissions updated.
+     * @param newDefaultPermission the default permission for the team.
+     * @return true if update successfully. If the team doesn't exist, return false.
+     */
+    public boolean updateTeamDefaultPermission(UUID teamId, Permission newDefaultPermission) {
+        Team team = getTeamById(teamId);
+
+        if (team == null) return false;
+
+        team.setDefaultPermission(newDefaultPermission);
+
+        teamState.markDirty();
+
+        TeamNetworking.broadcastTeamDefaultPermissionUpdate(team);
 
         return true;
     }

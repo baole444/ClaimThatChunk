@@ -1,10 +1,7 @@
 package Sky.Cat.CTC.client.networking;
 
 import Sky.Cat.CTC.client.Team.TeamClientData;
-import Sky.Cat.CTC.networking.payload.RequestTeamDataPayload;
-import Sky.Cat.CTC.networking.payload.TeamDataPayload;
-import Sky.Cat.CTC.networking.payload.TeamDisbandPayload;
-import Sky.Cat.CTC.networking.payload.TeamMemberUpdatePayload;
+import Sky.Cat.CTC.networking.payload.*;
 import Sky.Cat.CTC.permission.PermType;
 import Sky.Cat.CTC.permission.Permission;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -27,6 +24,14 @@ public class TeamClientNetworking {
                        payload.members()
                );
            });
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(TeamDefaultPermissionPayload.ID, (payload, context) -> {
+            context.client().execute(() -> {
+                TeamClientData.getInstance().updateDefaultPermission(
+                        payload.permissionFlags()
+                );
+            });
         });
 
         ClientPlayNetworking.registerGlobalReceiver(TeamMemberUpdatePayload.ID, (payload, context) -> {
