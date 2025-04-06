@@ -12,7 +12,7 @@ public class Team {
     private UUID teamId;
 
     // The name of the team
-    // TODO: If not specified, use leader's name + team, for example "Wuan_Si's Team"
+    // If not specified, use leader's name and team, for example, "Wuan_Si's Team"
     private String teamName;
 
     // The leader of the team, often the team's original creator unless transferred.
@@ -118,6 +118,14 @@ public class Team {
 
     public String getTeamName() {
         return teamName;
+    }
+
+    public void setTeamName(String teamName) {
+        if (teamName.isBlank()) {
+            this.teamName = leaderName +  "'s Team";
+        } else {
+            this.teamName = teamName;
+        }
     }
 
     public UUID getLeaderUUID() {

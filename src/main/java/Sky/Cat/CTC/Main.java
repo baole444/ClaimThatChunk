@@ -28,9 +28,8 @@ public class Main implements ModInitializer {
 
         // Register server lifecycle events for initializing TeamManager.
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-            LOGGER.info("Registering Team Manager...");
             setServer(server);
-            TeamManager.getInstance().initiateTeamState(server);
+            TeamManager.getInstance().loadTeams();
         });
 
         // Register network handlers.

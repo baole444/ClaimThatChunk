@@ -3,12 +3,10 @@ package Sky.Cat.CTC.Team;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-
 import Sky.Cat.CTC.Main;
 import Sky.Cat.CTC.networking.TeamNetworking;
 import Sky.Cat.CTC.permission.PermType;
 import Sky.Cat.CTC.permission.Permission;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,10 +16,10 @@ public class TeamManager{
     private static TeamManager ManagerInstance;
 
     // Mapping between player's uuid and team uuid.
-    private Map<UUID, UUID> playerTeamMap;
+    private final Map<UUID, UUID> playerTeamMap;
 
     // Logger
-    private static final Logger LOGGER = LoggerFactory.getLogger("ClaimThatChunk");
+    private static final Logger LOGGER = LoggerFactory.getLogger("ClaimThatChunk/TeamManager");
 
     // Reference for persistent state
     private TeamState teamState;
@@ -38,23 +36,9 @@ public class TeamManager{
     public static TeamManager getInstance() {
         if (ManagerInstance == null) {
             ManagerInstance = new TeamManager();
+            LOGGER.info("Team Manager initialization completed");
         }
         return ManagerInstance;
-    }
-
-    /**
-     * Initiate TeamState and rebuild the player-team map.
-     * @param server the current minecraft server instance.
-     */
-    public void initiateTeamState(MinecraftServer server) {
-        if (server != null) {
-            this.teamState = TeamState.getOrCreate(server);
-
-            boolean success = rebuildPlayerTeamMap();
-
-            if (success) LOGGER.info("Team Management registered Team State successfully");
-
-        }
     }
 
     /**
@@ -126,12 +110,38 @@ public class TeamManager{
         return getTeamById(teamId);
     }
 
+    /**
+     * Change the team's name.
+     * @param teamId uuid of the team that has its name changed.
+     * @param newName the new name of the team.
+     * @return true when changed successfully. If the team doesn't exist, return false.
+     */
+    public boolean updateTeamName(UUID teamId, String newName) {
+        Team team = getTeamById(teamId);
+
+        if (team == null) return false;
+
+        team.setTeamName(newName);
+
+        teamState.markDirty();
+
+        for (UUID memberId : team.getTeamMember().keySet()) {
+            ServerPlayerEntity player = Main.getServer().getPlayerManager().getPlayer(memberId);
+
+            if (player != null) {
+                TeamNetworking.sendTeamDataToPlayer(player, team);
+            }
+        }
+
+        return true;
+    }
+
     /***
      * Add a player to a team.
      * @param teamId targeted team to add the player to.
      * @param playerUUID uuid of the player that will be added.
      * @param playerName name of the player.
-     * @return true when added successfully. If the team doesn't exist or player already belongs to a team then false.
+     * @return true when added successfully. If the team doesn't exist or player already belongs to a team, then false.
      */
     public boolean addPlayerToTeam(UUID teamId, UUID playerUUID, String playerName) {
         if (playerTeamMap.containsKey(playerUUID)) return false; // Player already belong to a team
@@ -149,6 +159,37 @@ public class TeamManager{
         }
 
         return result;
+    }
+
+    /**
+     * Update a team member's permission.
+     * @param teamId uuid of the team the member belong to.
+     * @param playerUUID uuid of the player that will have their permission updated.
+     * @param newPermission the new permission for the player
+     * @return true when update successfully. If the team doesn't exist or the player is not part of the team, return false.
+     */
+    public boolean updateMemberPermission(UUID teamId, UUID playerUUID, Permission newPermission) {
+        Team team = getTeamById(teamId);
+
+        if (team == null) return false;
+
+        TeamMember member = team.getTeamMember().get(playerUUID);
+
+        if (member == null) return false;
+
+        member.setPermission(newPermission);
+
+        teamState.markDirty();
+
+        TeamNetworking.broadcastTeamMemberUpdate(
+                team,
+                playerUUID,
+                member.getPlayerName(),
+                true, // Not really joining, but true will trigger update or create on client side
+                newPermission
+        );
+
+        return true;
     }
 
     /**
@@ -187,6 +228,12 @@ public class TeamManager{
         return result;
     }
 
+    /**
+     * Transfer the team's leadership to another member.
+     * @param teamId uuid of the team that will have its leadership transferred.
+     * @param newLeaderId uuid of the team member to transfer the leadership to.
+     * @return true when transfer successfully. If the team doesn't exist or the new leader is not part of the team, return false.
+     */
     public boolean transferLeadership(UUID teamId, UUID newLeaderId) {
         Team team = getTeamById(teamId);
 
@@ -199,12 +246,10 @@ public class TeamManager{
         String newLeaderName = team.getTeamMember().get(newLeaderId).getPlayerName();
 
         // Update team leadership parameters
-        team.setLeaderUUID(newLeaderId);
-        team.setLeaderName(newLeaderName);
+        team.setLeaderUUID(newLeaderId).setLeaderName(newLeaderName);
 
         // Update permissions of new leader and the old leader now is normal a member.
-        TeamMember newLeader = team.getTeamMember().get(newLeaderId);
-        newLeader.getPermission().grantAllPermission();
+        team.getTeamMember().get(newLeaderId).getPermission().grantAllPermission();
 
         TeamMember oldLeader = team.getTeamMember().get(oldLeaderId);
 
@@ -223,7 +268,6 @@ public class TeamManager{
             if (player != null) {
                 TeamNetworking.sendTeamDataToPlayer(player, team);
             }
-
         }
 
         return true;
@@ -260,7 +304,14 @@ public class TeamManager{
         }
 
         this.teamState = TeamState.getOrCreate(Main.getServer());
-        rebuildPlayerTeamMap();
+
+        boolean success = rebuildPlayerTeamMap();
+
+        if (success) {
+            LOGGER.info("Team State registered successfully");
+        } else {
+            LOGGER.error("Failed to rebuild player-team mapping");
+        }
 
         LOGGER.info("Loaded {} teams from storage", teamState.getTeams().size());
     }
