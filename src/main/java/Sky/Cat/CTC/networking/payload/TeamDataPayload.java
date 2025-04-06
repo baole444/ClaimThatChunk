@@ -35,7 +35,7 @@ public record TeamDataPayload(UUID teamId, String teamName, UUID leaderId, Strin
             TeamDataPayload::leaderId,
 
             PacketCodecs.STRING,
-            TeamDataPayload::teamName,
+            TeamDataPayload::leaderName,
 
             PacketCodecs.map(
                     HashMap::new,

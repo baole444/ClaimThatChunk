@@ -128,6 +128,16 @@ public class Team {
         return leaderName;
     }
 
+    public Team setLeaderUUID(UUID leaderUUID) {
+        this.leaderUUID = leaderUUID;
+        return this;
+    }
+
+    public Team setLeaderName(String leaderName) {
+        this.leaderName = leaderName;
+        return this;
+    }
+
     public Map<UUID, TeamMember> getTeamMember() {
         return teamMember;
     }

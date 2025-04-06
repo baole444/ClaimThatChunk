@@ -105,7 +105,6 @@ public class TeamNetworking {
         );
 
         for (UUID memberId : team.getTeamMember().keySet()) {
-            // TODO:
             ServerPlayerEntity player = Main.getServer().getPlayerManager().getPlayer(memberId);
             if (player != null) {
                 ServerPlayNetworking.send(player, payload);

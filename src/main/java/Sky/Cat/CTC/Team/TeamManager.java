@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import Sky.Cat.CTC.Main;
 import Sky.Cat.CTC.networking.TeamNetworking;
+import Sky.Cat.CTC.permission.PermType;
 import Sky.Cat.CTC.permission.Permission;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -182,6 +183,48 @@ public class TeamManager{
         }
 
         return result;
+    }
+
+    public boolean transferLeadership(UUID teamId, UUID newLeaderId) {
+        Team team = getTeamById(teamId);
+
+        // If the team is null or transferring to a member outside the team.
+        if (team == null || !team.getTeamMember().containsKey(newLeaderId)) return false;
+
+        // Get the current leader's uuid for permission transfer.
+        UUID oldLeaderId = team.getLeaderUUID();
+
+        String newLeaderName = team.getTeamMember().get(newLeaderId).getPlayerName();
+
+        // Update team leadership parameters
+        team.setLeaderUUID(newLeaderId);
+        team.setLeaderName(newLeaderName);
+
+        // Update permissions of new leader and the old leader now is normal a member.
+        TeamMember newLeader = team.getTeamMember().get(newLeaderId);
+        newLeader.getPermission().grantAllPermission();
+
+        TeamMember oldLeader = team.getTeamMember().get(oldLeaderId);
+
+        Permission defaultPerm = new Permission();
+        for (PermType type : PermType.values()) {
+            defaultPerm.setPermission(type, team.getDefaultPermission().hasPermission(type));
+        }
+
+        oldLeader.setPermission(defaultPerm);
+
+        teamState.markDirty();
+
+        // Send update to all team's members.
+        for (UUID memberId : team.getTeamMember().keySet()) {
+            ServerPlayerEntity player = Main.getServer().getPlayerManager().getPlayer(memberId);
+            if (player != null) {
+                TeamNetworking.sendTeamDataToPlayer(player, team);
+            }
+
+        }
+
+        return true;
     }
 
     /***
