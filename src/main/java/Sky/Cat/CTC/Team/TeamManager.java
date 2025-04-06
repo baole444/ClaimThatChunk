@@ -215,38 +215,132 @@ public class TeamManager{
 
     /**
      * Remove a player from a team.
-     * @param playerUUID uuid of the player that will be removed.
+     * @param kickerUUID uuid of the player that execute the command.
+     * @param targetUUID uuid of the player that will be removed.
      * @return true when remove successfully.
      * If the team doesn't exist, return false.
      * Forcefully removed if the team they are in doesn't exist in data.
      */
-    public boolean removePlayerFromTeam(UUID playerUUID) {
-        UUID teamId = playerTeamMap.get(playerUUID);
+    public boolean kickPlayerFromTeam(UUID kickerUUID, UUID targetUUID) {
+        Team team = getTeamByPlayer(kickerUUID);
 
-        if (teamId == null) return false; // There is no team to remove from.
+        if (team == null) return false;
 
-        Team team = getTeamById(teamId);
+        TeamMember kicker = team.getTeamMember().get(kickerUUID);
+        if (kicker == null || !kicker.getPermission().hasPermission(PermType.KICK)) return false;
 
-        // Get their username for notify other clients.
-        String playerName = team.getTeamMember().get(playerUUID).getPlayerName();
+        UUID targetTeamId = playerTeamMap.get(targetUUID);
 
-        // This condition is impossible to happen unless data is tampered outside the game's management,
-        // (e.g., manually edited by user.)
-        if (team == null) {
-            playerTeamMap.remove(playerUUID);
-            return false;
-        }
+        if (targetTeamId == null || !targetTeamId.equals(team.getTeamId())) return false;
 
-        boolean result = team.removeMember(playerUUID);
+        String playerName = team.getTeamMember().get(targetUUID).getPlayerName();
+
+        boolean result = team.removeMember(targetUUID);
 
         if (result) {
-            playerTeamMap.remove(playerUUID);
+            playerTeamMap.remove(targetUUID);
+
             teamState.markDirty();
 
-            notifyTeamMemberLeft(team, playerUUID, playerName);
+            notifyTeamMemberLeft(team, targetUUID, playerName);
         }
 
         return result;
+    }
+
+    /**
+     * For when the player leaves the team on their own choice.
+     */
+    public boolean leaveTeam(UUID playerUUID) {
+        return handlePlayerLeavingTeam(playerUUID);
+    }
+
+    /**
+     * Handle a player leaving their team on their own.
+     * @param playerUUID uuid of the leaving player.
+     * @return true if removed successfully.
+     */
+    public boolean handlePlayerLeavingTeam(UUID playerUUID) {
+        boolean success = false;
+
+        UUID teamId = playerTeamMap.get(playerUUID);
+
+        if (teamId == null) return success;
+
+        Team team = getTeamById(teamId);
+
+        // Prevent out of management modification.
+        if (team == null) {
+            playerTeamMap.remove(playerUUID);
+            return success;
+        }
+
+        String playerName = team.getTeamMember().get(playerUUID).getPlayerName();
+
+        boolean isLeader = playerUUID.equals(team.getLeaderUUID());
+
+        // Case 1: there are still members left in the team.
+        if (isLeader && team.getTeamMember().size() > 1) {
+            UUID newLeadId = null;
+            TeamMember newLeader = null;
+
+            // Get the first member in entries and make them new leader
+            for (Map.Entry<UUID, TeamMember> entry : team.getTeamMember().entrySet()) {
+                if (!entry.getKey().equals(playerUUID)) {
+                    newLeadId = entry.getKey();
+                    newLeader = entry.getValue();
+                    break;
+                }
+            }
+
+            team.setLeaderUUID(newLeadId).setLeaderName(newLeader.getPlayerName());
+            newLeader.getPermission().grantAllPermission();
+
+            // Remove the old leader as normal member.
+            team.removeMember(playerUUID);
+
+            playerTeamMap.remove(playerUUID);
+
+            teamState.markDirty();
+
+            // Notify team's members about this change
+            for (UUID memberId : team.getTeamMember().keySet()) {
+                ServerPlayerEntity player = Main.getServer().getPlayerManager().getPlayer(memberId);
+                if (player != null) {
+                    TeamNetworking.sendTeamDataToPlayer(player, team);
+                }
+            }
+
+            // Notify the leaving player
+            notifyTeamMemberLeft(team, playerUUID, playerName);
+
+            success = true;
+        }
+
+        // Case 2: there is no one else left in the team after they left.
+        else if (isLeader && team.getTeamMember().size() <= 1) {
+            TeamNetworking.broadcastTeamDisbanded(team);
+
+            playerTeamMap.remove(playerUUID);
+
+            teamState.removeTeam(teamId);
+
+            success = true;
+        }
+
+        else {
+            success = team.removeMember(playerUUID);
+
+            if (success) {
+                playerTeamMap.remove(playerUUID);
+
+                teamState.markDirty();
+
+                notifyTeamMemberLeft(team, playerUUID, playerName);
+            }
+        }
+
+        return success;
     }
 
     /**
