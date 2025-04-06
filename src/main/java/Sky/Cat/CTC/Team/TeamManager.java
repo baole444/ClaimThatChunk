@@ -48,7 +48,11 @@ public class TeamManager{
     public void initiateTeamState(MinecraftServer server) {
         if (server != null) {
             this.teamState = TeamState.getOrCreate(server);
-            rebuildPlayerTeamMap();
+
+            boolean success = rebuildPlayerTeamMap();
+
+            if (success) LOGGER.info("Team Management registered Team State successfully");
+
         }
     }
 
@@ -183,7 +187,7 @@ public class TeamManager{
     /***
      * Rebuild player-team mapping from teams data.
      */
-    private void rebuildPlayerTeamMap() {
+    private boolean rebuildPlayerTeamMap() {
         playerTeamMap.clear();
 
         for (Map.Entry<UUID, Team> entry : teamState.getTeams().entrySet()) {
@@ -196,6 +200,8 @@ public class TeamManager{
         }
 
         LOGGER.info("Rebuilt player-team map with {} player mappings", playerTeamMap.size());
+
+        return true;
     }
 
     /**

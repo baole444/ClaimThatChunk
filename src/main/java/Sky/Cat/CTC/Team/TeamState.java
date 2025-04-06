@@ -105,7 +105,8 @@ public class TeamState extends PersistentState {
         }
         return removed;
     }
-    // TODO: This cause crash on startup
+
+    // If this caused crash because the world is null, check the Event that registers the Team Manager in Main.
     public static TeamState getOrCreate(MinecraftServer server) {
         return Objects.requireNonNull(server.getWorld(World.OVERWORLD)).
                 getPersistentStateManager().

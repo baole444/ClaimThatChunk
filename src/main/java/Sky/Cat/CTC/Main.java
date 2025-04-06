@@ -24,11 +24,11 @@ public class Main implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        LOGGER.info("Initiali");
+        LOGGER.info("Initializing...");
 
         // Register server lifecycle events for initializing TeamManager.
-        ServerLifecycleEvents.SERVER_STARTING.register(server -> {
-            LOGGER.info("Initializing Team Manager...");
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> {
+            LOGGER.info("Registering Team Manager...");
             setServer(server);
             TeamManager.getInstance().initiateTeamState(server);
         });
