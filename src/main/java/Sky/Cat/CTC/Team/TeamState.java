@@ -1,5 +1,6 @@
-package Sky.Cat.Team;
+package Sky.Cat.CTC.Team;
 
+import Sky.Cat.CTC.Main;
 import Sky.Cat.CTC.permission.PermType;
 import Sky.Cat.CTC.permission.Permission;
 import com.mojang.serialization.Codec;
@@ -73,7 +74,7 @@ public class TeamState extends PersistentState {
     ).apply(instance, TeamState::new));
 
     // Create PersistentStateType
-    private static final PersistentStateType<TeamState> TYPE = new PersistentStateType<>("claim_that_chunk_teams", TeamState::new, CODEC, null);
+    private static final PersistentStateType<TeamState> TYPE = new PersistentStateType<>(Main.MOD_ID + "_teams", TeamState::new, CODEC, null);
 
     private final Map<UUID, Team> teams;
 
@@ -104,7 +105,7 @@ public class TeamState extends PersistentState {
         }
         return removed;
     }
-
+    // TODO: This cause crash on startup
     public static TeamState getOrCreate(MinecraftServer server) {
         return Objects.requireNonNull(server.getWorld(World.OVERWORLD)).
                 getPersistentStateManager().

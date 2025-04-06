@@ -1,17 +1,14 @@
-package Sky.Cat.Team;
+package Sky.Cat.CTC.Team;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import com.mojang.serialization.DataResult;
-import net.minecraft.nbt.*;
+
+import Sky.Cat.CTC.Main;
+import Sky.Cat.CTC.networking.TeamNetworking;
+import Sky.Cat.CTC.permission.Permission;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.WorldSavePath;
+import net.minecraft.server.network.ServerPlayerEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,8 +24,6 @@ public class TeamManager{
 
     // Reference for persistent state
     private TeamState teamState;
-
-    private MinecraftServer server;
 
     // Private constructor for singleton
     private TeamManager() {
@@ -47,11 +42,10 @@ public class TeamManager{
     }
 
     /**
-     * Set the server instance for TeamManager instance.
+     * Initiate TeamState and rebuild the player-team map.
      * @param server the current minecraft server instance.
      */
-    public void setServer(MinecraftServer server) {
-        this.server = server;
+    public void initiateTeamState(MinecraftServer server) {
         if (server != null) {
             this.teamState = TeamState.getOrCreate(server);
             rebuildPlayerTeamMap();
@@ -75,6 +69,13 @@ public class TeamManager{
         teamState.addTeam(newTeam);
 
         playerTeamMap.put(creatorId, newTeam.getTeamId());
+
+        // Update to the team creator
+        ServerPlayerEntity player = Main.getServer().getPlayerManager().getPlayer(creatorId);
+
+        if (player != null) {
+            TeamNetworking.sendTeamDataToPlayer(player, newTeam);
+        }
 
         return newTeam;
     }
@@ -136,7 +137,10 @@ public class TeamManager{
         if (result) {
             playerTeamMap.put(playerUUID, teamId);
             teamState.markDirty();
+
+            notifyTeamMemberJoined(team, playerUUID, playerName);
         }
+
         return result;
     }
 
@@ -154,6 +158,9 @@ public class TeamManager{
 
         Team team = getTeamById(teamId);
 
+        // Get their username for notify other clients.
+        String playerName = team.getTeamMember().get(playerUUID).getPlayerName();
+
         // This condition is impossible to happen unless data is tampered outside the game's management,
         // (e.g., manually edited by user.)
         if (team == null) {
@@ -166,6 +173,8 @@ public class TeamManager{
         if (result) {
             playerTeamMap.remove(playerUUID);
             teamState.markDirty();
+
+            notifyTeamMemberLeft(team, playerUUID, playerName);
         }
 
         return result;
@@ -194,12 +203,12 @@ public class TeamManager{
      * Called by server lifecycle event.
      */
     public void loadTeams() {
-        if (server == null) {
+        if (Main.getServer() == null) {
             LOGGER.error("Cannot load team: server is null");
             return;
         }
 
-        this.teamState = TeamState.getOrCreate(server);
+        this.teamState = TeamState.getOrCreate(Main.getServer());
         rebuildPlayerTeamMap();
 
         LOGGER.info("Loaded {} teams from storage", teamState.getTeams().size());
@@ -210,6 +219,41 @@ public class TeamManager{
         LOGGER.info("Team saving is done automatically");
     }
 
+    // When a member joins a team.
+    private void notifyTeamMemberJoined(Team team, UUID playerUUID, String playerName) {
+        TeamMember member = team.getTeamMember().get(playerUUID);
 
+        if (member != null) {
+            TeamNetworking.broadcastTeamMemberUpdate(
+                    team,
+                    playerUUID,
+                    playerName,
+                    true,
+                    member.getPermission()
+            );
+        }
+    }
+
+    // When a member leaves a team.
+    private void notifyTeamMemberLeft(Team team, UUID playerUUID, String playerName) {
+        TeamNetworking.broadcastTeamMemberUpdate(
+                team,
+                playerUUID,
+                playerName,
+                false,
+                new Permission()
+        );
+    }
+
+    // When a player log in.
+    // Called from Main connection event.
+    public void sendTeamDataToPlayer(ServerPlayerEntity player) {
+        UUID playerId = player.getUuid();
+        Team team = getTeamByPlayer(playerId);
+
+        if (team != null) {
+            TeamNetworking.sendTeamDataToPlayer(player, team);
+        }
+    }
 
 }

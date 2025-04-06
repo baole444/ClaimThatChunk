@@ -13,9 +13,11 @@ classes/
 # VSCode
 .settings/
 .vscode/
-bin/
 .classpath
 .project
 
 # Fabric
 run/
+
+# Others
+bin/

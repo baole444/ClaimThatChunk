@@ -1,8 +1,7 @@
-package Sky.Cat.Team;
+package Sky.Cat.CTC.Team;
 
 import Sky.Cat.CTC.permission.PermType;
 import Sky.Cat.CTC.permission.Permission;
-import net.minecraft.entity.player.PlayerEntity;
 
 import java.util.HashMap;
 import java.util.Map;

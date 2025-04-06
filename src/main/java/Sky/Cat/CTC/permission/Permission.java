@@ -1,8 +1,5 @@
 package Sky.Cat.CTC.permission;
 
-import java.lang.reflect.Field;
-import java.util.List;
-
 public class Permission {
     // Allow adding new member to the team.
     private boolean allowInvite;
