@@ -95,6 +95,8 @@ public class TeamManager{
 
         if (disbandTeam == null) return false;
 
+        TeamNetworking.broadcastTeamDisbanded(disbandTeam);
+
         for (UUID playerId : disbandTeam.getTeamMember().keySet()) {
             playerTeamMap.remove(playerId);
         }

@@ -3,11 +3,13 @@ package Sky.Cat.CTC.client.networking;
 import Sky.Cat.CTC.client.Team.TeamClientData;
 import Sky.Cat.CTC.networking.payload.RequestTeamDataPayload;
 import Sky.Cat.CTC.networking.payload.TeamDataPayload;
+import Sky.Cat.CTC.networking.payload.TeamDisbandPayload;
 import Sky.Cat.CTC.networking.payload.TeamMemberUpdatePayload;
 import Sky.Cat.CTC.permission.PermType;
 import Sky.Cat.CTC.permission.Permission;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.text.Text;
 
 public class TeamClientNetworking {
 
@@ -43,6 +45,20 @@ public class TeamClientNetworking {
                    );
                }
            });
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(TeamDisbandPayload.ID, (payload, context) -> {
+            context.client().execute(() -> {
+                TeamClientData teamClientData = TeamClientData.getInstance();
+
+                // Is the client part of the disbanded team?
+                if (teamClientData.hasTeam() && teamClientData.getTeamId().equals(payload.teamId())) {
+                    teamClientData.clearTeamData();
+
+                    context.player().sendMessage(Text.literal("Your team has been disbanded."), false);
+                }
+
+            });
         });
     }
 

@@ -4,10 +4,7 @@ import Sky.Cat.CTC.Main;
 import Sky.Cat.CTC.Team.Team;
 import Sky.Cat.CTC.Team.TeamManager;
 import Sky.Cat.CTC.Team.TeamMember;
-import Sky.Cat.CTC.networking.payload.RequestTeamDataPayload;
-import Sky.Cat.CTC.networking.payload.TeamDataPayload;
-import Sky.Cat.CTC.networking.payload.TeamMemberData;
-import Sky.Cat.CTC.networking.payload.TeamMemberUpdatePayload;
+import Sky.Cat.CTC.networking.payload.*;
 import Sky.Cat.CTC.permission.PermType;
 import Sky.Cat.CTC.permission.Permission;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -51,6 +48,7 @@ public class TeamNetworking {
     public static void register() {
         PayloadTypeRegistry.playS2C().register(TeamDataPayload.ID, TeamDataPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(TeamMemberUpdatePayload.ID, TeamMemberUpdatePayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(TeamDisbandPayload.ID, TeamDisbandPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(RequestTeamDataPayload.ID, RequestTeamDataPayload.CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(RequestTeamDataPayload.ID, (payload, context) -> {
@@ -103,6 +101,17 @@ public class TeamNetworking {
                 isJoining,
                 permissionToInt(permission)
         );
+
+        for (UUID memberId : team.getTeamMember().keySet()) {
+            ServerPlayerEntity player = Main.getServer().getPlayerManager().getPlayer(memberId);
+            if (player != null) {
+                ServerPlayNetworking.send(player, payload);
+            }
+        }
+    }
+
+    public static void broadcastTeamDisbanded(Team team) {
+        TeamDisbandPayload payload = new TeamDisbandPayload(team.getTeamId());
 
         for (UUID memberId : team.getTeamMember().keySet()) {
             ServerPlayerEntity player = Main.getServer().getPlayerManager().getPlayer(memberId);
