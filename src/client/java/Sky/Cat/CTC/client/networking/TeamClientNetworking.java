@@ -1,12 +1,12 @@
 package Sky.Cat.CTC.client.networking;
 
-import Sky.Cat.CTC.client.Team.TeamClientData;
+import Sky.Cat.CTC.client.team.TeamClientData;
 import Sky.Cat.CTC.networking.payload.*;
-import Sky.Cat.CTC.permission.PermType;
-import Sky.Cat.CTC.permission.Permission;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
+
+import static Sky.Cat.CTC.Utilities.intToPermission;
 
 public class TeamClientNetworking {
 
@@ -14,6 +14,7 @@ public class TeamClientNetworking {
      * Register client-side network handlers.
      */
     public static void register() {
+        // Receive team update.
         ClientPlayNetworking.registerGlobalReceiver(TeamDataPayload.ID, (payload, context) -> {
            context.client().execute(() -> {
                TeamClientData.getInstance().updateTeamData(
@@ -26,6 +27,7 @@ public class TeamClientNetworking {
            });
         });
 
+        // Receive default permissions.
         ClientPlayNetworking.registerGlobalReceiver(TeamDefaultPermissionPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
                 TeamClientData.getInstance().updateDefaultPermission(
@@ -34,6 +36,7 @@ public class TeamClientNetworking {
             });
         });
 
+        // Receive team member update.
         ClientPlayNetworking.registerGlobalReceiver(TeamMemberUpdatePayload.ID, (payload, context) -> {
            context.client().execute(() -> {
                if (payload.isJoining()) {
@@ -52,6 +55,7 @@ public class TeamClientNetworking {
            });
         });
 
+        // Receive team disband update.
         ClientPlayNetworking.registerGlobalReceiver(TeamDisbandPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
                 TeamClientData teamClientData = TeamClientData.getInstance();
@@ -65,24 +69,6 @@ public class TeamClientNetworking {
 
             });
         });
-    }
-
-    /**
-     * Convert the integer permission flags back to Permission Object.
-     */
-    public static Permission intToPermission(int flags) {
-        Permission permission = new Permission();
-
-        permission.setPermission(PermType.INVITE, (flags & 1) != 0);
-        permission.setPermission(PermType.KICK, (flags & 2) != 0);
-        permission.setPermission(PermType.CLAIM, (flags & 4) != 0);
-        permission.setPermission(PermType.BUILD, (flags & 8) != 0);
-        permission.setPermission(PermType.BREAK, (flags & 16) != 0);
-        permission.setPermission(PermType.INTERACT, (flags & 32) != 0);
-        permission.setPermission(PermType.MODIFY_PERMISSION, (flags & 64) != 0);
-        permission.setPermission(PermType.DISBAND, (flags & 128) != 0);
-
-        return permission;
     }
 
     /**

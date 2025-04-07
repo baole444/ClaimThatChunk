@@ -1,6 +1,6 @@
 package Sky.Cat.CTC;
 
-import Sky.Cat.CTC.Team.TeamManager;
+import Sky.Cat.CTC.team.TeamManager;
 import Sky.Cat.CTC.networking.TeamNetworking;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;

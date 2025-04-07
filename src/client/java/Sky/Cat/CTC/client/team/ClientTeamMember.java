@@ -1,4 +1,4 @@
-package Sky.Cat.CTC.client.Team;
+package Sky.Cat.CTC.client.team;
 
 import Sky.Cat.CTC.permission.Permission;
 

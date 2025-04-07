@@ -1,6 +1,6 @@
 package Sky.Cat.CTC.client;
 
-import Sky.Cat.CTC.client.Team.TeamClientData;
+import Sky.Cat.CTC.client.team.TeamClientData;
 import Sky.Cat.CTC.client.networking.TeamClientNetworking;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;

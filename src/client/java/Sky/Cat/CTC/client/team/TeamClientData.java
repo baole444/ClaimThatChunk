@@ -1,12 +1,13 @@
-package Sky.Cat.CTC.client.Team;
+package Sky.Cat.CTC.client.team;
 
-import Sky.Cat.CTC.client.networking.TeamClientNetworking;
 import Sky.Cat.CTC.networking.payload.TeamMemberData;
 import Sky.Cat.CTC.permission.Permission;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import static Sky.Cat.CTC.Utilities.intToPermission;
 
 /**
  * Client-side caching for team data.
@@ -53,7 +54,7 @@ public class TeamClientData {
             this.members.put(entry.getKey(), new ClientTeamMember(
                     data.playerUUID(),
                     data.playerName(),
-                    TeamClientNetworking.intToPermission(data.permissionFlags())
+                    intToPermission(data.permissionFlags())
             ));
         }
 
@@ -65,7 +66,7 @@ public class TeamClientData {
      * @param permissionFlag the permission flag received from the server.
      */
     public void updateDefaultPermission(int permissionFlag) {
-        this.defaultPermission = TeamClientNetworking.intToPermission(permissionFlag);
+        this.defaultPermission = intToPermission(permissionFlag);
     }
 
     /**
@@ -117,6 +118,10 @@ public class TeamClientData {
 
     public String getLeaderName() {
         return leaderName;
+    }
+
+    public Permission getDefaultPermission() {
+        return defaultPermission;
     }
 
     /**

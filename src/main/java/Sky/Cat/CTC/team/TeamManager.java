@@ -1,4 +1,4 @@
-package Sky.Cat.CTC.Team;
+package Sky.Cat.CTC.team;
 
 import java.util.Map;
 import java.util.UUID;
