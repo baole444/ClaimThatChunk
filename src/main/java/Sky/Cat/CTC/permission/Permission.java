@@ -1,5 +1,8 @@
 package Sky.Cat.CTC.permission;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+
 public class Permission {
     // Allow adding new member to the team.
     private boolean allowInvite;
@@ -24,6 +27,35 @@ public class Permission {
 
     // Allow disbandment of the team.
     private boolean allowDisband;
+
+    /**
+     * Permission's CODEC for serialization and deserialization.
+     */
+    public static final Codec<Permission> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.BOOL.fieldOf("invite").forGetter(p -> p.hasPermission(PermType.INVITE)),
+            Codec.BOOL.fieldOf("kick").forGetter(p -> p.hasPermission(PermType.KICK)),
+            Codec.BOOL.fieldOf("claim").forGetter(p -> p.hasPermission(PermType.CLAIM)),
+            Codec.BOOL.fieldOf("build").forGetter(p -> p.hasPermission(PermType.BUILD)),
+            Codec.BOOL.fieldOf("break").forGetter(p -> p.hasPermission(PermType.BREAK)),
+            Codec.BOOL.fieldOf("interact").forGetter(p -> p.hasPermission(PermType.INTERACT)),
+            Codec.BOOL.fieldOf("modifyPermission").forGetter(p -> p.hasPermission(PermType.MODIFY_PERMISSION)),
+            Codec.BOOL.fieldOf("disband").forGetter(p -> p.hasPermission(PermType.DISBAND))
+    ).apply(instance, (invite, kick, claim, build, brk, interact, modifyPerm, disband) -> {
+        Permission permission = new Permission();
+
+        // Apply values to new permission instance.
+        permission.setPermission(PermType.INVITE, invite);
+        permission.setPermission(PermType.KICK, kick);
+        permission.setPermission(PermType.CLAIM, claim);
+        permission.setPermission(PermType.BUILD, build);
+        permission.setPermission(PermType.BREAK, brk);
+        permission.setPermission(PermType.INTERACT, interact);
+        permission.setPermission(PermType.MODIFY_PERMISSION, modifyPerm);
+        permission.setPermission(PermType.DISBAND, disband);
+
+        return permission;
+    }));
+
 
     /**
      * Initiate permission with all nodes to false;

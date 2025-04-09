@@ -422,9 +422,7 @@ public class TeamManager{
 
         boolean success = rebuildPlayerTeamMap();
 
-        if (success) {
-            LOGGER.info("Team State registered successfully");
-        } else {
+        if (!success) {
             LOGGER.error("Failed to rebuild player-team mapping");
         }
 

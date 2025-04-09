@@ -10,7 +10,7 @@ import net.minecraft.util.Identifier;
 import java.util.UUID;
 
 /**
- * Record of the team member's update packet for server to client synchronization.
+ * Record of the team member's update packet for synchronization.
  * @param teamId uuid of the team.
  * @param playerUUID uuid of the player.
  * @param playerName name of the player.
@@ -22,7 +22,7 @@ public record TeamMemberUpdatePayload(UUID teamId, UUID playerUUID, String playe
 
     public static final CustomPayload.Id<TeamMemberUpdatePayload> ID = new CustomPayload.Id<>(TEAM_MEMBER_UPDATE_PAYLOAD_ID);
 
-    public static final PacketCodec<RegistryByteBuf, TeamMemberUpdatePayload> CODEC = PacketCodec.tuple(
+    public static final PacketCodec<RegistryByteBuf, TeamMemberUpdatePayload> PACKET_CODEC = PacketCodec.tuple(
             PacketCodecs.STRING.xmap(UUID::fromString, UUID::toString),
             TeamMemberUpdatePayload::teamId,
 

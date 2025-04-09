@@ -1,4 +1,4 @@
-package Sky.Cat.CTC.networking.payload;
+package Sky.Cat.CTC.team;
 
 import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.network.codec.PacketCodec;
@@ -13,7 +13,7 @@ import java.util.UUID;
  * @param permissionFlags permission flag number of the player.
  */
 public record TeamMemberData(UUID playerUUID, String playerName, int permissionFlags) {
-    public static final PacketCodec<RegistryByteBuf, TeamMemberData> CODEC = PacketCodec.tuple(
+    public static final PacketCodec<RegistryByteBuf, TeamMemberData> PACKET_CODEC = PacketCodec.tuple(
             PacketCodecs.STRING.xmap(UUID::fromString, UUID::toString),
             TeamMemberData::playerUUID,
 

@@ -2,6 +2,8 @@ package Sky.Cat.CTC.team;
 
 import Sky.Cat.CTC.permission.PermType;
 import Sky.Cat.CTC.permission.Permission;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +38,23 @@ public class Team {
     // Time stamp of when the team was created, can be pass into to create a Date object for display purpose.
     private long createTime;
 
-    //
+    /**
+     * Team's CODEC for serialization and deserialization.
+     */
+    public static final Codec<Team> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.STRING.xmap(UUID::fromString, UUID::toString).fieldOf("teamId").forGetter(Team::getTeamId),
+            Codec.STRING.fieldOf("teamName").forGetter(Team::getTeamName),
+            Codec.STRING.xmap(UUID::fromString, UUID::toString).fieldOf("leaderUUID").forGetter(Team::getLeaderUUID),
+            Codec.STRING.fieldOf("leaderName").forGetter(Team::getLeaderName),
+            Codec.unboundedMap(
+                    Codec.STRING.xmap(UUID::fromString, UUID::toString),
+                    TeamMember.CODEC
+            ).fieldOf("teamMembers").forGetter(Team::getTeamMember),
+            Permission.CODEC.fieldOf("defaultPermission").forGetter(Team::getDefaultPermission),
+            Codec.INT.fieldOf("teamSizeLimit").forGetter(Team::getTeamSizeLimit),
+            Codec.LONG.fieldOf("createTime").forGetter(Team::getCreateTime)
+    ).apply(instance, Team::fromCodec));
+
     public Team(UUID leaderID, String leaderName, String teamName) {
         this.teamId = UUID.randomUUID();
 

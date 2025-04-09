@@ -9,12 +9,17 @@ import net.minecraft.util.Identifier;
 
 import java.util.UUID;
 
+/**
+ * A record of a team's default permissions packet payload for synchronization.
+ * @param teamId uuid of the team.
+ * @param permissionFlags permissions flag number of team's default permissions.
+ */
 public record TeamDefaultPermissionPayload(UUID teamId, int permissionFlags) implements CustomPayload {
     private static final Identifier TEAM_DEFAULT_PERMISSION_PAYLOAD_ID = Identifier.of(Main.MOD_ID, "team_default_permission");
 
     public static final CustomPayload.Id<TeamDefaultPermissionPayload> ID = new CustomPayload.Id<>(TEAM_DEFAULT_PERMISSION_PAYLOAD_ID);
 
-    public static final PacketCodec<RegistryByteBuf, TeamDefaultPermissionPayload> CODEC = PacketCodec.tuple(
+    public static final PacketCodec<RegistryByteBuf, TeamDefaultPermissionPayload> PACKET_CODEC = PacketCodec.tuple(
             PacketCodecs.STRING.xmap(UUID::fromString, UUID::toString),
             TeamDefaultPermissionPayload::teamId,
 

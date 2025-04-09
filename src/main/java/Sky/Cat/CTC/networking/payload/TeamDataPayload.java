@@ -1,6 +1,7 @@
 package Sky.Cat.CTC.networking.payload;
 
 import Sky.Cat.CTC.Main;
+import Sky.Cat.CTC.team.TeamMemberData;
 import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.network.codec.PacketCodecs;
@@ -12,7 +13,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * A record of Team packet payload for server to client synchronization.
+ * A record of Team packet payload for synchronization.
  * @param teamId uuid of the team.
  * @param teamName name of the team.
  * @param leaderId uuid of the team's leader.
@@ -24,7 +25,7 @@ public record TeamDataPayload(UUID teamId, String teamName, UUID leaderId, Strin
 
     public static final CustomPayload.Id<TeamDataPayload> ID = new CustomPayload.Id<>(TEAM_DATA_PAYLOAD_ID);
 
-    public static final PacketCodec<RegistryByteBuf, TeamDataPayload> CODEC = PacketCodec.tuple(
+    public static final PacketCodec<RegistryByteBuf, TeamDataPayload> PACKET_CODEC = PacketCodec.tuple(
             PacketCodecs.STRING.xmap(UUID::fromString, UUID::toString),
             TeamDataPayload::teamId,
 
@@ -40,7 +41,7 @@ public record TeamDataPayload(UUID teamId, String teamName, UUID leaderId, Strin
             PacketCodecs.map(
                     HashMap::new,
                     PacketCodecs.STRING.xmap(UUID::fromString, UUID::toString),
-                    TeamMemberData.CODEC
+                    TeamMemberData.PACKET_CODEC
             ),
             TeamDataPayload::members,
 

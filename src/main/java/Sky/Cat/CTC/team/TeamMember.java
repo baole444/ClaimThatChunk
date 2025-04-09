@@ -1,6 +1,8 @@
 package Sky.Cat.CTC.team;
 
 import Sky.Cat.CTC.permission.Permission;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import java.util.UUID;
 
@@ -12,6 +14,16 @@ public class TeamMember {
     private Permission permission;
 
     private final long teamJoinTime;
+
+    /**
+     * TeamMember's CODEC for serialization and deserialization.
+     */
+    public static final Codec<TeamMember> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.STRING.xmap(UUID::fromString, UUID::toString).fieldOf("uuid").forGetter(TeamMember::getPlayerUUID),
+            Codec.STRING.fieldOf("name").forGetter(TeamMember::getPlayerName),
+            Permission.CODEC.fieldOf("permission").forGetter(TeamMember::getPermission),
+            Codec.LONG.fieldOf("joinTime").forGetter(TeamMember::getTeamJoinTime)
+    ).apply(instance, TeamMember::fromPersistence));
 
     public TeamMember(UUID playerUUID, String playerName) {
         this.playerUUID = playerUUID;

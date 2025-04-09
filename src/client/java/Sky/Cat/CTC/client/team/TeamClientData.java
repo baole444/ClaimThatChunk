@@ -1,6 +1,6 @@
 package Sky.Cat.CTC.client.team;
 
-import Sky.Cat.CTC.networking.payload.TeamMemberData;
+import Sky.Cat.CTC.team.TeamMemberData;
 import Sky.Cat.CTC.permission.Permission;
 
 import java.util.HashMap;

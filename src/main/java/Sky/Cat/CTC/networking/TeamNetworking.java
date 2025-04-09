@@ -6,6 +6,7 @@ import Sky.Cat.CTC.team.TeamManager;
 import Sky.Cat.CTC.team.TeamMember;
 import Sky.Cat.CTC.networking.payload.*;
 import Sky.Cat.CTC.permission.Permission;
+import Sky.Cat.CTC.team.TeamMemberData;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -15,16 +16,16 @@ import java.util.UUID;
 import static Sky.Cat.CTC.Utilities.permissionToInt;
 
 public class TeamNetworking {
-    // Register handlers method.
+    // Register handler methods.
     public static void register() {
         // Server -> Client
-        PayloadTypeRegistry.playS2C().register(TeamDataPayload.ID, TeamDataPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(TeamDefaultPermissionPayload.ID, TeamDefaultPermissionPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(TeamMemberUpdatePayload.ID, TeamMemberUpdatePayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(TeamDisbandPayload.ID, TeamDisbandPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(TeamDataPayload.ID, TeamDataPayload.PACKET_CODEC);
+        PayloadTypeRegistry.playS2C().register(TeamDefaultPermissionPayload.ID, TeamDefaultPermissionPayload.PACKET_CODEC);
+        PayloadTypeRegistry.playS2C().register(TeamMemberUpdatePayload.ID, TeamMemberUpdatePayload.PACKET_CODEC);
+        PayloadTypeRegistry.playS2C().register(TeamDisbandPayload.ID, TeamDisbandPayload.PACKET_CODEC);
 
         // Client -> Server
-        PayloadTypeRegistry.playC2S().register(RequestTeamDataPayload.ID, RequestTeamDataPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(RequestTeamDataPayload.ID, RequestTeamDataPayload.PACKET_CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(RequestTeamDataPayload.ID, (payload, context) -> {
             context.server().execute(() -> {
@@ -61,7 +62,7 @@ public class TeamNetworking {
     }
 
     /**
-     * Inform all clients about changes in a team's member.
+     * Inform all clients in the team about changes in a team's member.
      * @param team the team which the update happened.
      * @param playerUUID uuid of the player joining or leaving the team.
      * @param playerName name of the player joining or leaving the team.
@@ -85,6 +86,10 @@ public class TeamNetworking {
         }
     }
 
+    /**
+     * Inform all clients in the team about team's default permissions update.
+     * @param team the team which the update happened.
+     */
     public static void broadcastTeamDefaultPermissionUpdate(Team team) {
         TeamDefaultPermissionPayload payload = new TeamDefaultPermissionPayload(
                 team.getTeamId(),
@@ -99,6 +104,10 @@ public class TeamNetworking {
         }
     }
 
+    /**
+     * Inform all clients in the team about the team's disbandment.
+     * @param team the team which the update happened.
+     */
     public static void broadcastTeamDisbanded(Team team) {
         TeamDisbandPayload payload = new TeamDisbandPayload(team.getTeamId());
 
