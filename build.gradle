@@ -30,7 +30,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("net.luckperms:api:5.4")
+    compileOnly("net.luckperms:api:${luckperm_version}")
 
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"

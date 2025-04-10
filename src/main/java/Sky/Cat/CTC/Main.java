@@ -2,10 +2,12 @@ package Sky.Cat.CTC;
 
 import Sky.Cat.CTC.chunk.ChunkEventHandlers;
 import Sky.Cat.CTC.chunk.ChunkManager;
+import Sky.Cat.CTC.command.TeamCommand;
 import Sky.Cat.CTC.networking.ChunkNetworking;
 import Sky.Cat.CTC.team.TeamManager;
 import Sky.Cat.CTC.networking.TeamNetworking;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.MinecraftServer;
@@ -46,6 +48,10 @@ public class Main implements ModInitializer {
 
         // Register event handlers for chunk interactions.
         ChunkEventHandlers.register();
+
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            TeamCommand.register(dispatcher);
+        });
 
         // Register player connection events
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {

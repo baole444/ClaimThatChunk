@@ -58,7 +58,7 @@ public class Team {
     public Team(UUID leaderID, String leaderName, String teamName) {
         this.teamId = UUID.randomUUID();
 
-        if (teamName.isBlank()) {
+        if (teamName == null || teamName.isBlank()) {
             this.teamName = leaderName +  "'s Team";
         } else {
             this.teamName = teamName;
