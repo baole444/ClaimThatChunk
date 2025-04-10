@@ -40,7 +40,7 @@ public class TeamCommand {
             Team team = instance.createTeam(player.getUuid(), player.getName().getString(), teamName);
 
             if (team != null) {
-                source.sendFeedback(() -> Text.literal("Team created: " + team.getTeamName()), true);
+                source.sendFeedback(() -> Text.literal("Team created: " + team.getTeamName() + " by " + player.getName().getString()), true);
                 return 1;
             } else {
                 source.sendError(Text.literal("Failed to create team."));

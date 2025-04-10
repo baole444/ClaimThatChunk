@@ -1,10 +1,8 @@
 package Sky.Cat.CTC.client.networking;
 
+import Sky.Cat.CTC.chunk.ChunkData;
 import Sky.Cat.CTC.client.chunk.ChunkClientData;
-import Sky.Cat.CTC.networking.payload.ChunkClaimPayload;
-import Sky.Cat.CTC.networking.payload.ChunkPermissionUpdatePayload;
-import Sky.Cat.CTC.networking.payload.ChunkUnClaimPayload;
-import Sky.Cat.CTC.networking.payload.RequestChunkDataPayload;
+import Sky.Cat.CTC.networking.payload.*;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
 
@@ -35,6 +33,20 @@ public class ChunkClientNetworking {
                         payload.playerUUID(),
                         intToPermission(payload.permissionFlags())
                 );
+            });
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(ChunksDataPayload.ID, (payload, context) -> {
+            context.client().execute(() -> {
+                ChunkClientData.getInstance().clearChunkData();
+
+                for (ChunkData data : payload.chunks()) {
+                    ChunkClientData.getInstance().addOrUpdateChunk(
+                            data.position(),
+                            data.teamId(),
+                            data.claimedTime()
+                    );
+                }
             });
         });
     }
