@@ -1,5 +1,8 @@
 package Sky.Cat.CTC;
 
+import Sky.Cat.CTC.chunk.ChunkEventHandlers;
+import Sky.Cat.CTC.chunk.ChunkManager;
+import Sky.Cat.CTC.networking.ChunkNetworking;
 import Sky.Cat.CTC.team.TeamManager;
 import Sky.Cat.CTC.networking.TeamNetworking;
 import net.fabricmc.api.ModInitializer;
@@ -29,16 +32,28 @@ public class Main implements ModInitializer {
         // Register server lifecycle events for initializing TeamManager.
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             setServer(server);
+
+            // Load team data
             TeamManager.getInstance().loadTeams();
+
+            // Load chunk data
+            ChunkManager.getInstance().loadChunks();
         });
 
         // Register network handlers.
         TeamNetworking.register();
+        ChunkNetworking.register();
+
+        // Register event handlers for chunk interactions.
+        ChunkEventHandlers.register();
 
         // Register player connection events
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-            // When the player joins, send them their team data if they are in a team.
+            // Send team data
             TeamManager.getInstance().sendTeamDataToPlayer(handler.player);
+
+            // Send chunk data
+            ChunkManager.getInstance().sendChunkDataToPlayer(handler.player);
         });
 
         LOGGER.info("initialization completed");

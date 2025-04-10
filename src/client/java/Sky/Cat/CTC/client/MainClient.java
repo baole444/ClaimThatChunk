@@ -1,5 +1,7 @@
 package Sky.Cat.CTC.client;
 
+import Sky.Cat.CTC.client.chunk.ChunkClientData;
+import Sky.Cat.CTC.client.networking.ChunkClientNetworking;
 import Sky.Cat.CTC.client.team.TeamClientData;
 import Sky.Cat.CTC.client.networking.TeamClientNetworking;
 import net.fabricmc.api.ClientModInitializer;
@@ -11,16 +13,21 @@ public class MainClient implements ClientModInitializer {
     public void onInitializeClient() {
         // Register client's network handlers.
         TeamClientNetworking.register();
+        ChunkClientNetworking.register();
 
-        // Request team data when joining the server.
+        // Request data when joining the server.
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-            // Request team data from the server
+            // Request team data
             TeamClientNetworking.requestTeamData();
+
+            // Request chunk data
+            ChunkClientNetworking.requestChunkData();
         });
 
-        // Clear client team data when leaving the server.
+        // Clear client data when leaving the server.
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             TeamClientData.getInstance().clearTeamData();
+            ChunkClientData.getInstance().clearChunkData();
         });
     }
 }
