@@ -29,6 +29,10 @@ public class TeamManager{
         this.playerTeamMap = new ConcurrentHashMap<>();
     }
 
+    public TeamState getTeamState() {
+        return this.teamState;
+    }
+
     /**
      * Get or create the singleton instance of TeamManager.
      * @return the TeamManager instance.

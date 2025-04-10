@@ -2,7 +2,8 @@ package Sky.Cat.CTC;
 
 import Sky.Cat.CTC.chunk.ChunkEventHandlers;
 import Sky.Cat.CTC.chunk.ChunkManager;
-import Sky.Cat.CTC.command.TeamCommand;
+import Sky.Cat.CTC.command.AdminCommands;
+import Sky.Cat.CTC.command.TeamCommands;
 import Sky.Cat.CTC.networking.ChunkNetworking;
 import Sky.Cat.CTC.team.TeamManager;
 import Sky.Cat.CTC.networking.TeamNetworking;
@@ -50,7 +51,8 @@ public class Main implements ModInitializer {
         ChunkEventHandlers.register();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            TeamCommand.register(dispatcher);
+            TeamCommands.register(dispatcher);
+            AdminCommands.register(dispatcher);
         });
 
         // Register player connection events
