@@ -34,7 +34,7 @@ public class ChunkCommands {
                         // Claim command
                         .then(CommandManager.literal("claim")
                                 .requires(ChunkCommands::hasClaimPermission)
-
+                                .executes(ChunkCommands::executeClaim)
                         )
                 )
         );
@@ -76,7 +76,16 @@ public class ChunkCommands {
                 source.sendFeedback(() -> Text.literal("This chunk is not yet claimed!"), false);
                 source.sendFeedback(() -> Text.literal("You can claim it for your team with /ctc chunk claim"), false);
             } else {
-                String teamName = TeamManager.getInstance().getTeamById(chunk.getOwnerTeamId()).getTeamName();
+                Team team = TeamManager.getInstance().getTeamById(chunk.getOwnerTeamId());
+
+                String teamName;
+
+                if (team == null) {
+                    teamName = "Error: No team found.";
+                    ChunkManager.LOGGER.error("A ghost claimed chunk at {} was not cleared properly when team was disbanded or purged.", chunk.getPosition());
+                } else {
+                    teamName = team.getTeamName();
+                }
 
                 source.sendFeedback(() -> Text.literal("| Claimed chunk information"), false);
                 source.sendFeedback(() -> Text.literal("| Team: " + teamName), false);

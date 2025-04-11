@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ChunkManager {
     private static ChunkManager ManagerInstance;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("ClaimThatChunk/ChunkManager");
+    public static final Logger LOGGER = LoggerFactory.getLogger("ClaimThatChunk/ChunkManager");
 
     private ChunkState chunkState;
 
@@ -76,7 +76,7 @@ public class ChunkManager {
 
         ChunkNetworking.broadcastChunkClaimed(claimedChunk);
 
-        LOGGER.info("Chunk at {} claimed by {} for team {}", position, playerEntity.getName().toString(), teamId);
+        LOGGER.info("Chunk at {} claimed by {} for team {}", position, playerEntity.getName(), team.getTeamName());
 
         return true;
     }

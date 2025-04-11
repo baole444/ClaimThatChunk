@@ -67,6 +67,10 @@ public class TeamCommands {
             TeamManager instance = TeamManager.getInstance();
             Team team = instance.getTeamByPlayer(player.getUuid());
 
+            if (team == null) {
+                source.sendError(Text.literal("You don't have a team to disband."));
+                return 0;
+            }
 
             if (!player.getUuid().equals(team.getLeaderUUID()) &&
                     !team.getTeamMember().get(player.getUuid())
