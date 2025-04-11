@@ -82,7 +82,7 @@ public class ChunkCommands {
 
                 if (team == null) {
                     teamName = "Error: No team found.";
-                    ChunkManager.LOGGER.error("A ghost claimed chunk at {} was not cleared properly when team was disbanded or purged.", chunk.getPosition());
+                    ChunkManager.LOGGER.error("A claimed-chunk at {} was not cleared properly when its team was disbanded or purged.", chunk.getPosition());
                 } else {
                     teamName = team.getTeamName();
                 }
@@ -133,6 +133,8 @@ public class ChunkCommands {
 
                 return 0;
             }
+
+            source.sendFeedback(() -> Text.literal("Chunk claimed successfully!"), false);
 
             return 1;
 

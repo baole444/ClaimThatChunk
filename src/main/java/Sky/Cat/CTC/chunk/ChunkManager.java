@@ -8,6 +8,7 @@ import Sky.Cat.CTC.team.TeamManager;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.slf4j.Logger;
@@ -76,7 +77,7 @@ public class ChunkManager {
 
         ChunkNetworking.broadcastChunkClaimed(claimedChunk);
 
-        LOGGER.info("Chunk at {} claimed by {} for team {}", position, playerEntity.getName(), team.getTeamName());
+        LOGGER.info("Chunk at {} claimed by {} for team '{}'", position, playerEntity.getName().getLiteralString(), team.getTeamName());
 
         return true;
     }

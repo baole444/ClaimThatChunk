@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import Sky.Cat.CTC.Main;
+import Sky.Cat.CTC.chunk.ChunkManager;
 import Sky.Cat.CTC.networking.TeamNetworking;
 import Sky.Cat.CTC.permission.PermType;
 import Sky.Cat.CTC.permission.Permission;
@@ -83,6 +84,12 @@ public class TeamManager{
         Team disbandTeam = getTeamById(teamId);
 
         if (disbandTeam == null) return false;
+
+        int countUnclaimedChunk = ChunkManager.getInstance().unclaimAllTeamChunks(teamId);
+
+        if (countUnclaimedChunk > 0) {
+            ChunkManager.LOGGER.info("Unclaimed {} chunk(s) for disbanded team {}", countUnclaimedChunk, disbandTeam.getTeamName());
+        }
 
         TeamNetworking.broadcastTeamDisbanded(disbandTeam);
 
