@@ -9,6 +9,7 @@ import Sky.Cat.CTC.team.TeamManager;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -47,7 +48,7 @@ public class AdminCommands {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("ctc")
                 .then(CommandManager.literal("purge")
-                        .requires(source -> hasAdminPermission(source))
+                        .requires(AdminCommands::hasAdminPermission)
                         .executes(AdminCommands::executePurge)
                 )
                 .then(CommandManager.literal("confirm")
@@ -71,7 +72,7 @@ public class AdminCommands {
         try {
             ServerPlayerEntity player = source.getPlayerOrThrow();
             return player.getUuid().toString();
-        } catch (Exception e) {
+        } catch (CommandSyntaxException e) {
             return CONSOLE_ID;
         }
     }
