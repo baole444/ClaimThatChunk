@@ -6,7 +6,6 @@ import Sky.Cat.CTC.chunk.ChunkPosition;
 import Sky.Cat.CTC.chunk.ClaimedChunk;
 import Sky.Cat.CTC.team.Team;
 import Sky.Cat.CTC.team.TeamManager;
-import Sky.Cat.CTC.team.TeamState;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -25,7 +24,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class AdminCommands {
-    private static final Map<ServerCommandSource, PurgeRequest> pendingPurges = new ConcurrentHashMap<>();
+    private static final String CONSOLE_ID = "COMMAND_CONSOLE_SOURCE_ID";
+
+    private static final Map<String, PurgeRequest> pendingPurges = new ConcurrentHashMap<>();
 
     private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
@@ -66,10 +67,20 @@ public class AdminCommands {
         return source.hasPermissionLevel(2);
     }
 
+    private static String getSourceId(ServerCommandSource source) {
+        try {
+            ServerPlayerEntity player = source.getPlayerOrThrow();
+            return player.getUuid().toString();
+        } catch (Exception e) {
+            return CONSOLE_ID;
+        }
+    }
+
     private static int executePurge(CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
+        String sourceId = getSourceId(source);
 
-        if (pendingPurges.containsKey(source)) {
+        if (pendingPurges.containsKey(sourceId)) {
             source.sendError(Text.literal("You already have a pending purge operation. " +
                     "Use /ctc confirm <pin> or /ctc cancel"));
             return 0;
@@ -80,64 +91,66 @@ public class AdminCommands {
 
         long expirationTime = System.currentTimeMillis() + 15000;
         PurgeRequest request = new PurgeRequest(pin, expirationTime);
-        pendingPurges.put(source, request);
+        pendingPurges.put(sourceId, request);
 
         Main.LOGGER.info("Queued {} purge(s) request", pendingPurges.size());
 
         scheduler.schedule(() -> {
-            if (pendingPurges.containsKey(source)) {
-                PurgeRequest currentRequest = pendingPurges.get(source);
+            if (pendingPurges.containsKey(sourceId)) {
+                PurgeRequest currentRequest = pendingPurges.get(sourceId);
 
                 if (currentRequest.isExpired()) {
-                    pendingPurges.remove(source);
+                    pendingPurges.remove(sourceId);
                     source.sendError(Text.literal("Purge confirmation timed out. Operation cancelled."));
                 }
             }
         }, 16, TimeUnit.SECONDS);
 
-        source.sendFeedback(() -> Text.literal("/!\\ WARNING! This will purge ALL team and chunk data! /!\\"), false);
-        source.sendFeedback(() -> Text.literal("To confirm, enter this 6-digit PIN within 15 seconds: " + pin), false);
-        source.sendFeedback(() -> Text.literal("Execute: /ctc confirm " + pin), false);
-        source.sendFeedback(() -> Text.literal("To cancel, type: /ctc cancel"), false);
+        source.sendFeedback(() -> Text.literal("| /!\\ WARNING! This will purge ALL team and chunk data! /!\\"), false);
+        source.sendFeedback(() -> Text.literal("| To confirm, enter this 6-digit PIN within 15 seconds: " + pin), false);
+        source.sendFeedback(() -> Text.literal("| Execute: /ctc confirm " + pin), false);
+        source.sendFeedback(() -> Text.literal("| To cancel, type: /ctc cancel"), false);
 
         return 1;
     }
 
     private static int executeConfirm(CommandContext<ServerCommandSource> context, int enteredPin) {
         ServerCommandSource source = context.getSource();
+        String sourceId = getSourceId(source);
 
-        if (!pendingPurges.containsKey(source)) {
+        if (!pendingPurges.containsKey(sourceId)) {
             source.sendError(Text.literal("You don't have any pending purge operation."));
             return 0;
         }
 
-        PurgeRequest request = pendingPurges.get(source);
+        PurgeRequest request = pendingPurges.get(sourceId);
 
         if (request.isExpired()) {
-            pendingPurges.remove(source);
+            pendingPurges.remove(sourceId);
             source.sendError(Text.literal("Purge confirmation timed out. Operation cancelled."));
             return 0;
         }
 
         if (request.pin != enteredPin) {
             source.sendError(Text.literal("Incorrect PIN. Purge operation cancelled."));
-            pendingPurges.remove(source);
+            pendingPurges.remove(sourceId);
             return 0;
         }
 
-        pendingPurges.remove(source);
+        pendingPurges.remove(sourceId);
         return purgeAllData(source);
     }
 
     private static int executeCancel(CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
+        String sourceId = getSourceId(source);
 
-        if (!pendingPurges.containsKey(source)) {
+        if (!pendingPurges.containsKey(sourceId)) {
             source.sendError(Text.literal("You don't have a pending purge operation"));
             return 0;
         }
 
-        pendingPurges.remove(source);
+        pendingPurges.remove(sourceId);
         source.sendFeedback(() -> Text.literal("Purge operation cancelled."), false);
 
         return 1;
@@ -148,8 +161,8 @@ public class AdminCommands {
         ChunkManager chunkManager = ChunkManager.getInstance();
 
         try {
-            int teamCount = 0;
-            int chunkCount = 0;
+            int teamCount;
+            int chunkCount;
 
             Map<UUID, Team> allTeams = new HashMap<>(teamManager.getTeamState().getTeams());
             teamCount = allTeams.size();
