@@ -29,6 +29,11 @@ public class Main implements ModInitializer {
         Main.server = server;
     }
 
+    /**
+     * Allow Admin to bypass some chunk's permissions and protection check, use with caution.
+     */
+    public static boolean ADMIN_BYPASS = false;
+
     @Override
     public void onInitialize() {
         LOGGER.info("Initializing...");

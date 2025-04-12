@@ -47,6 +47,16 @@ public class AdminCommands {
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("ctc")
+                // Admin bypass
+                .then(CommandManager.literal("admin_bypass")
+                        .requires(AdminCommands::hasAdminPermission)
+                        .executes(AdminCommands::isAdminBypassEnabled)
+                        .then(CommandManager.argument("enable", IntegerArgumentType.integer(0, 1))
+                                .executes(context -> executeEnable(context, IntegerArgumentType.getInteger(context, "enable")))
+                        )
+                )
+
+                // Purge command
                 .then(CommandManager.literal("purge")
                         .requires(AdminCommands::hasAdminPermission)
                         .executes(AdminCommands::executePurge)
@@ -66,6 +76,43 @@ public class AdminCommands {
         // TODO: If luckperm integration is added in the future,
         //  check all these permission check for alternative luckperm permission node.
         return source.hasPermissionLevel(2);
+    }
+
+    private static int isAdminBypassEnabled(CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+
+        boolean isBypassEnabled = Main.ADMIN_BYPASS;
+
+        if (!isBypassEnabled) {
+            source.sendFeedback(() -> Text.literal("Admin bypass is turned off."), false);
+        } else {
+            source.sendFeedback(() -> Text.literal("Admin bypass is turned on."), false);
+        }
+
+        return 1;
+    }
+
+    private static int executeEnable(CommandContext<ServerCommandSource> context, int enableFlag) {
+        ServerCommandSource source = context.getSource();
+
+        if (source.isExecutedByPlayer()) {
+            ServerPlayerEntity player = source.getPlayer();
+
+            if (player != null && player.hasPermissionLevel(2)) {
+                Main.ADMIN_BYPASS = enableFlag == 1;
+                player.sendMessage(Text.literal("Admin bypass set to " + Main.ADMIN_BYPASS), false);
+                Main.LOGGER.warn("Admin bypass set to '{}' by {}", Main.ADMIN_BYPASS, player.getName().getLiteralString());
+
+                return 1;
+            }
+
+            return 0;
+        } else {
+            Main.ADMIN_BYPASS = enableFlag == 1;
+            source.sendFeedback(() -> Text.literal("Admin bypass set to " + Main.ADMIN_BYPASS), false);
+
+            return 1;
+        }
     }
 
     private static String getSourceId(ServerCommandSource source) {

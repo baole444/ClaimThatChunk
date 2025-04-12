@@ -1,5 +1,6 @@
 package Sky.Cat.CTC.chunk;
 
+import Sky.Cat.CTC.Main;
 import Sky.Cat.CTC.permission.PermType;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;

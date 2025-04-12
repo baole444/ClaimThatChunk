@@ -1,5 +1,6 @@
 package Sky.Cat.CTC.mixin;
 
+import Sky.Cat.CTC.Main;
 import Sky.Cat.CTC.chunk.ChunkManager;
 import Sky.Cat.CTC.permission.PermType;
 import net.minecraft.entity.player.PlayerEntity;

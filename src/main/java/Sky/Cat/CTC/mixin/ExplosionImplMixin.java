@@ -1,9 +1,19 @@
 package Sky.Cat.CTC.mixin;
 
 import Sky.Cat.CTC.Main;
+import Sky.Cat.CTC.chunk.ChunkManager;
+import Sky.Cat.CTC.chunk.ChunkPosition;
+import Sky.Cat.CTC.chunk.ClaimedChunk;
+import Sky.Cat.CTC.permission.PermType;
+import Sky.Cat.CTC.team.Team;
+import Sky.Cat.CTC.team.TeamManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.explosion.Explosion;
 import net.minecraft.world.explosion.ExplosionImpl;
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,8 +32,12 @@ public abstract class ExplosionImplMixin {
 
     @Shadow public abstract LivingEntity getCausingEntity();
 
-    @Inject(method = "getBlocksToDestroy", at = @At("HEAD"), cancellable = true)
-    private void onGetBlocksToDestroy(CallbackInfoReturnable<List<BlockPos>> cir) {
+    @Shadow public abstract ServerWorld getWorld();
+
+    @Shadow public abstract Vec3d getPosition();
+
+    //@Inject(method = "getBlocksToDestroy", at = @At("HEAD"), cancellable = true)
+    private void onGetBlocksToDestroyDebug(CallbackInfoReturnable<List<BlockPos>> cir) {
         try {
             Explosion explosion = (Explosion)(Object)this;
 
@@ -38,4 +52,49 @@ public abstract class ExplosionImplMixin {
         }
     }
 
+    @Inject(method = "getBlocksToDestroy", at = @At("HEAD"), cancellable = true)
+    private void onGetBlocksToDestroy(CallbackInfoReturnable<List<BlockPos>> cir) {
+        try {
+            Entity direct = this.getEntity();
+            LivingEntity causingEntity = this.getCausingEntity();
+            ServerWorld world = this.getWorld();
+            Vec3d position = this.getPosition();
+
+            BlockPos blockPos = BlockPos.ofFloored(position);
+            ChunkPosition chunkPosition = new ChunkPosition(blockPos, world.getRegistryKey());
+
+            ChunkManager chunkManager = ChunkManager.getInstance();
+
+            if (chunkManager.isChunkClaimed(chunkPosition)) {
+                ClaimedChunk chunk = chunkManager.getClaimedChunk(chunkPosition);
+
+                Team owner = null;
+
+                if (chunk != null) {
+                    owner = TeamManager.getInstance().getTeamById(chunk.getOwnerTeamId());
+                }
+
+                boolean allowExplosion = false;
+                if (causingEntity instanceof PlayerEntity player) {
+                    allowExplosion = chunkManager.hasPermission(player, blockPos, world.getRegistryKey(), PermType.BREAK);
+
+                    if (!allowExplosion) {
+                        player.sendMessage(Text.literal("You don't have permission to use explosives on this chunk"), true);
+                    }
+                }
+
+                if (!allowExplosion) {
+                    ChunkManager.LOGGER.info("| Explosion intercepted:");
+                    ChunkManager.LOGGER.info("| Position: {}, Team: {}", chunkPosition, owner != null ? owner.getTeamName() : "unknown");
+                    ChunkManager.LOGGER.info("| Source: {}", direct != null ? direct.getName().getLiteralString() : "unknown");
+                    ChunkManager.LOGGER.info("| Caused by: {}", causingEntity != null ? causingEntity.getName().getLiteralString() : "unknown");
+
+                    cir.setReturnValue(List.of());
+                }
+            }
+
+        } catch (Exception e) {
+            ChunkManager.LOGGER.error("Error in ExplosionImplMixin: ", e);
+        }
+    }
 }

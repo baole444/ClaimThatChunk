@@ -215,7 +215,7 @@ public class ChunkManager {
      */
     public boolean hasPermission(PlayerEntity player, BlockPos pos, RegistryKey<World> dimension, PermType permType) {
         // player is admin
-        if (player.hasPermissionLevel(2)) return true;
+        if (Main.ADMIN_BYPASS && player.hasPermissionLevel(2)) return true;
 
         ClaimedChunk chunk = getClaimedChunkAt(pos, dimension);
 
