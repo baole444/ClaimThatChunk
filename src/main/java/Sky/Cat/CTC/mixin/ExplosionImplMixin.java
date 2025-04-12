@@ -64,6 +64,7 @@ public abstract class ExplosionImplMixin {
 
             ChunkManager chunkManager = ChunkManager.getInstance();
 
+            // Check on claim chunk only
             if (chunkManager.isChunkClaimed(chunkPosition)) {
                 ClaimedChunk chunk = chunkManager.getClaimedChunk(chunkPosition);
 
@@ -73,25 +74,25 @@ public abstract class ExplosionImplMixin {
                     owner = TeamManager.getInstance().getTeamById(chunk.getOwnerTeamId());
                 }
 
+                // Check permission on the player that caused the explosion
                 boolean allowExplosion = false;
                 if (causingEntity instanceof PlayerEntity player) {
                     allowExplosion = chunkManager.hasPermission(player, blockPos, world.getRegistryKey(), PermType.BREAK);
 
                     if (!allowExplosion) {
-                        player.sendMessage(Text.literal("You don't have permission to use explosives on this chunk"), true);
+                        player.sendMessage(Text.literal("Missing permission to use explosives on this chunk."), true);
                     }
                 }
 
                 if (!allowExplosion) {
                     ChunkManager.LOGGER.info("| Explosion intercepted:");
                     ChunkManager.LOGGER.info("| Position: {}, Team: {}", chunkPosition, owner != null ? owner.getTeamName() : "unknown");
-                    ChunkManager.LOGGER.info("| Source: {}", direct != null ? direct.getName().getLiteralString() : "unknown");
+                    ChunkManager.LOGGER.info("| Source: {}", direct != null ? direct.getClass().getSimpleName() : "unknown");
                     ChunkManager.LOGGER.info("| Caused by: {}", causingEntity != null ? causingEntity.getName().getLiteralString() : "unknown");
 
                     cir.setReturnValue(List.of());
                 }
             }
-
         } catch (Exception e) {
             ChunkManager.LOGGER.error("Error in ExplosionImplMixin: ", e);
         }
