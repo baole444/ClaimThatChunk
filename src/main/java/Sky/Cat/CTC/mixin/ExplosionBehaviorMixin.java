@@ -24,7 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(ExplosionBehavior.class)
 public class ExplosionBehaviorMixin {
 
-    @Inject(method = "canDestroyBlock", at = @At("HEAD"), cancellable = true)
+    //@Inject(method = "canDestroyBlock", at = @At("HEAD"), cancellable = true)
     private void onCanDestroyBlock(Explosion explosion, BlockView world, BlockPos pos, BlockState state, float power, CallbackInfoReturnable<Boolean> cir) {
         if (!(world instanceof World realWorld)) return;
 
@@ -64,6 +64,36 @@ public class ExplosionBehaviorMixin {
         }
 
         cir.setReturnValue(false);
+    }
+
+    @Inject(method = "canDestroyBlock", at = @At("HEAD"), cancellable = true)
+    private void onCanDestroyBlockDeBug(Explosion explosion, BlockView world, BlockPos pos, BlockState state, float power, CallbackInfoReturnable<Boolean> cir) {
+        try {
+            Main.LOGGER.info("Explosion detected at {}", pos);
+
+            Entity direct = explosion.getEntity();
+
+            Entity causer = explosion.getCausingEntity();
+
+            Main.LOGGER.info("Source {} caused by {}",
+                    (direct != null ? direct.getClass().getSimpleName() : "unknown"),
+                    (causer != null ? causer.getClass().getSimpleName() : "unknown")
+            );
+
+            if (world instanceof World realWorld) {
+                Main.LOGGER.info("World type: {}, isClient: {}", realWorld.getRegistryKey().getValue(), realWorld.isClient());
+
+                ChunkPosition chunkPos = new ChunkPosition(pos, realWorld.getRegistryKey());
+                Main.LOGGER.info("Chunk position: {}", chunkPos);
+            } else {
+                Main.LOGGER.info("World is not instance of World");
+            }
+
+            cir.setReturnValue(false);
+            Main.LOGGER.info("Explosion blocked for debugging");
+        } catch (Exception e) {
+            Main.LOGGER.error("Error in ExplosionBehaviourMixin: ", e);
+        }
     }
 
     @Inject(method = "shouldDamage", at = @At("HEAD"), cancellable = true)
