@@ -186,5 +186,4 @@ public abstract class ExplosionImplMixin {
             ChunkManager.LOGGER.error("Error in filterBlockToDestroy: ", e);
         }
     }
-
 }
