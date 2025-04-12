@@ -4,7 +4,8 @@
   "package": "Sky.Cat.CTC.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "BlockItemMixin"
+    "BlockItemMixin",
+    "ExplosionBehaviorMixin"
   ],
   "injectors": {
     "defaultRequire": 1

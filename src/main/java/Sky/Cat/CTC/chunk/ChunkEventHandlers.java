@@ -3,11 +3,9 @@ package Sky.Cat.CTC.chunk;
 import Sky.Cat.CTC.permission.PermType;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 
 public class ChunkEventHandlers {
     public static void register() {
