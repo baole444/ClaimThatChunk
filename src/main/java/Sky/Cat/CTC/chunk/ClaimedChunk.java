@@ -66,7 +66,7 @@ public class ClaimedChunk {
      * Check if a player has their permissions override for this chunk.
      * @param playerUUID uuid of the player to check on.
      * @param permType type of permission to check for.
-     * @return true if have permission
+     * @return true if the player has permission.
      */
     public boolean hasPermission(UUID playerUUID, PermType permType) {
         // Check for override permission

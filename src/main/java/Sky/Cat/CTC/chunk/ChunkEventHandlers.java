@@ -32,6 +32,7 @@ public class ChunkEventHandlers {
 
             if (!ChunkManager.getInstance().hasPermission(player, pos, world.getRegistryKey(), PermType.INTERACT)) {
                 player.sendMessage(Text.literal("Missing permission to interact with blocks in this chunk."), true);
+                return ActionResult.FAIL;
             }
 
             return ActionResult.PASS;
