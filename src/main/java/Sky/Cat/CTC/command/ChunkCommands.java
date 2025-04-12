@@ -33,8 +33,11 @@ public class ChunkCommands {
                         )
                         // Claim command
                         .then(CommandManager.literal("claim")
-                                .requires(ChunkCommands::hasClaimPermission)
                                 .executes(ChunkCommands::executeClaim)
+                        )
+                        // Unclaim command
+                        .then(CommandManager.literal("unclaim")
+                                .executes(ChunkCommands::executeUnclaim)
                         )
                 )
         );
@@ -94,7 +97,7 @@ public class ChunkCommands {
 
             return 1;
         } catch (CommandSyntaxException e) {
-            source.sendError(Text.literal("Only player can execute this command"));
+            source.sendError(Text.literal("Only players can execute this command."));
             return 0;
         }
     }
@@ -103,9 +106,23 @@ public class ChunkCommands {
         ServerCommandSource source = context.getSource();
 
         try {
-            ChunkManager instance = ChunkManager.getInstance();
+            ChunkManager chunkManager = ChunkManager.getInstance();
 
             ServerPlayerEntity player = source.getPlayerOrThrow();
+
+            Team team = TeamManager.getInstance().getTeamByPlayer(player.getUuid());
+
+            if (team == null) {
+                source.sendError(Text.literal("You are not in a team! Create or join a team first."));
+                return 0;
+            }
+
+            TeamMember member = team.getTeamMember().get(player.getUuid());
+
+            if (member == null || !member.getPermission().hasPermission(PermType.CLAIM)) {
+                source.sendError(Text.literal("You don't have permission to claim this chunk."));
+                return 0;
+            }
 
             BlockPos instancePosition = player.getBlockPos();
 
@@ -113,33 +130,94 @@ public class ChunkCommands {
 
             ChunkPosition chunkPos = new ChunkPosition(instancePosition, dimension);
 
-            Team team = TeamManager.getInstance().getTeamByPlayer(player.getUuid());
+            if (chunkManager.isChunkClaimed(chunkPos)) {
+                ClaimedChunk existingClaim = chunkManager.getClaimedChunk(chunkPos);
 
-            if (team == null) {
-                source.sendError(Text.literal("You are currently not in a team to claim this chunk."));
-                source.sendFeedback(() -> Text.literal("Consider joining a team or create one with /ctc team create <team_name>"), false);
-                return 0;
-            }
-
-            boolean success = ChunkManager.getInstance().claimChunk(chunkPos, team.getTeamId(), player);
-
-            if (!success) {
-                if (instance.isChunkClaimed(chunkPos)) {
-                    source.sendFeedback(() -> Text.literal("This chunk is already claimed!"), false);
-                }
-                else if (!team.getTeamMember().get(player.getUuid()).getPermission().hasPermission(PermType.CLAIM)) {
-                    source.sendError(Text.literal("You don't have permission to claim this chunk."));
+                if (existingClaim.getOwnerTeamId().equals(team.getTeamId())) {
+                    source.sendFeedback(() -> Text.literal("Your team already claimed this chunk!"), false);
+                } else {
+                    source.sendError(Text.literal("This chunk is already claimed by another team."));
                 }
 
                 return 0;
             }
 
-            source.sendFeedback(() -> Text.literal("Chunk claimed successfully!"), false);
+            int countTeamClaimedChunks = chunkManager.getTeamChunkCount(team.getTeamId());
 
-            return 1;
+            int maxChunks = chunkManager.getMaxChunksPerTeam();
+
+            if (maxChunks > 0 && countTeamClaimedChunks >= maxChunks) {
+                source.sendError(Text.literal("Your team has reached chunk claim limit of "  + maxChunks + " chunks."));
+                return 0;
+            }
+
+            boolean success = chunkManager.claimChunk(chunkPos, team.getTeamId(), player);
+
+            if (success) {
+                source.sendFeedback(() -> Text.literal("Chunk claimed successfully for team " + team.getTeamName() + "!"), true);
+                return 1;
+            } else {
+                source.sendError(Text.literal("Failed to claim chunk. Please try again"));
+                return 0;
+            }
 
         } catch (CommandSyntaxException e) {
-            source.sendError(Text.literal("Only player can execute this command"));
+            source.sendError(Text.literal("Only players can execute this command"));
+            return 0;
+        }
+    }
+
+    public static int executeUnclaim(CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+
+        try {
+            ChunkManager chunkManager = ChunkManager.getInstance();
+
+            ServerPlayerEntity player = source.getPlayerOrThrow();
+
+            BlockPos instancePosition = player.getBlockPos();
+
+            RegistryKey<World> dimension = player.getWorld().getRegistryKey();
+
+            ClaimedChunk chunk = chunkManager.getClaimedChunkAt(instancePosition, dimension);
+
+            if (chunk == null) {
+                source.sendError(Text.literal("This chunk is not claimed."));
+                return 0;
+            }
+
+            Team team = TeamManager.getInstance().getTeamByPlayer(player.getUuid());
+
+            if (team == null || !chunk.getOwnerTeamId().equals(team.getTeamId())) {
+                source.sendError(Text.literal("You can only unclaim chunks owned by your team."));
+                return 0;
+            }
+
+            UUID playerUUID = player.getUuid();
+
+            if (!playerUUID.equals(team.getLeaderUUID())) {
+                TeamMember member = team.getTeamMember().get(playerUUID);
+
+                if (member == null || !member.getPermission().hasPermission(PermType.CLAIM)) {
+                    source.sendError(Text.literal("You don't have permission to unclaim chunks."));
+                    return 0;
+                }
+            }
+
+            ChunkPosition chunkPos = new ChunkPosition(instancePosition, dimension);
+
+            boolean success = chunkManager.unclaimChunk(chunkPos, player);
+
+            if (success) {
+                source.sendFeedback(() -> Text.literal("Chunk unclaimed successfully!"), true);
+                return 1;
+            } else {
+                source.sendError(Text.literal("Failed to unclaim chunk. Please try again."));
+                return 0;
+            }
+
+        } catch (CommandSyntaxException e) {
+            source.sendError(Text.literal("Only players can execute this command"));
             return 0;
         }
     }
