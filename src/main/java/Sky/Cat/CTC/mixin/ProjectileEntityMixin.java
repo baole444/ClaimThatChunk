@@ -56,16 +56,14 @@ public abstract class ProjectileEntityMixin {
                     if (!hasPermission) {
                         player.sendMessage(Text.literal("Missing permission to interact with blocks in claimed chunk."),true);
                     }
-                } else {
-                    // None-player owner is blocked by default
-                    // Log the block
-                    ChunkManager.LOGGER.debug("| Projectile intercepted at: ");
-                    ChunkManager.LOGGER.debug("| Position: {}", chunkPosition);
-                    ChunkManager.LOGGER.debug("| Projectile: {}", projectile.getClass().getSimpleName());
                 }
 
                 // Cancel event and remove projectile
                 if (!hasPermission) {
+                    ChunkManager.LOGGER.info("| Projectile intercepted at: ");
+                    ChunkManager.LOGGER.info("| Position: {}", chunkPosition);
+                    ChunkManager.LOGGER.info("| Projectile: {}", projectile.getClass().getSimpleName());
+
                     projectile.discard();
                     ci.cancel();
                 }
@@ -79,6 +77,10 @@ public abstract class ProjectileEntityMixin {
     private void stopBlockLogicAfterCollision(BlockHitResult blockHitResult, CallbackInfo ci) {
         try {
             ProjectileEntity projectile = (ProjectileEntity) (Object) this;
+
+            if (projectile == null) {
+                Main.LOGGER.error("Projectile was cleared on this check!");
+            }
 
             // Processed by server only.
             if (projectile.getWorld().isClient()) return;
@@ -96,11 +98,12 @@ public abstract class ProjectileEntityMixin {
                 if (owner instanceof PlayerEntity player) {
 
                     hasPermission = chunkManager.hasPermission(player, blockPos, projectile. getWorld().getRegistryKey(), PermType.INTERACT);
+                    ChunkManager.LOGGER.info("Permission is {}", hasPermission);
                 }
 
                 if (!hasPermission) {
-                    ChunkManager.LOGGER.debug("| Block logic for projectile intercepted:");
-                    ChunkManager.LOGGER.debug("| Position: {}", chunkPosition);
+                    ChunkManager.LOGGER.info("| Block logic for projectile intercepted:");
+                    ChunkManager.LOGGER.info("| Position: {}", chunkPosition);
 
                     ci.cancel();
                 }
