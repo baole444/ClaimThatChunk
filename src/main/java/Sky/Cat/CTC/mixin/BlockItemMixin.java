@@ -27,14 +27,12 @@ public class BlockItemMixin {
         PlayerEntity player = context.getPlayer();
 
         // None-player block placement
-        // TODO: Not really related to build permission check but make sure to also prevent
-        //  griefing attempt like lava casting, tnt cannon and live stock kill on claimed chunk.
         if (player == null) return;
 
         BlockPos pos = context.getBlockPos();
 
         if (!ChunkManager.getInstance().hasPermission(player, pos, context.getWorld().getRegistryKey(), PermType.BUILD)) {
-            player.sendMessage(Text.literal("Missing permission to build on this chunk."), true);
+            player.sendMessage(Text.literal("Missing permission to build on claimed chunk."), true);
             callbackInfoReturnable.setReturnValue(ActionResult.FAIL);
         }
     }

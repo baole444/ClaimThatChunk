@@ -4,7 +4,7 @@
   "version": "${version}",
   "name": "ClaimThatChunk",
   "description": "A mod that allow claiming chunks and add members with permissions",
-  "authors": [],
+  "authors": ["baole444"],
   "contact": {},
   "license": "GPL-3.0",
   "icon": "assets/claim_that_chunk/icon.png",

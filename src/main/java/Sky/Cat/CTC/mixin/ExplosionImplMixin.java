@@ -42,73 +42,6 @@ public abstract class ExplosionImplMixin {
 
     @Shadow public abstract float getPower();
 
-    @Shadow @Final private ServerWorld world;
-
-    // Debug version
-    //@Inject(method = "getBlocksToDestroy", at = @At("HEAD"), cancellable = true)
-    private void onGetBlocksToDestroyDebug(CallbackInfoReturnable<List<BlockPos>> cir) {
-        try {
-            Explosion explosion = (Explosion)(Object)this;
-
-            Main.LOGGER.info("Explosion detected: Entity {}, CausingEntity={}",
-                    this.getEntity() != null ? this.getEntity().getClass().getSimpleName() : "null",
-                    this.getCausingEntity() != null ? this.getCausingEntity().getClass().getSimpleName() : "null");
-
-            cir.setReturnValue(List.of());
-            Main.LOGGER.info("Explosion blocked.");
-        } catch (Exception e) {
-            Main.LOGGER.error("Error in ExplosionImplMixin: ", e);
-        }
-    }
-
-    // Version 2
-    //@Inject(method = "getBlocksToDestroy", at = @At("HEAD"), cancellable = true)
-    private void onGetBlocksToDestroy(CallbackInfoReturnable<List<BlockPos>> cir) {
-        try {
-            Entity direct = this.getEntity();
-            LivingEntity causingEntity = this.getCausingEntity();
-            ServerWorld world = this.getWorld();
-            Vec3d position = this.getPosition();
-
-            BlockPos blockPos = BlockPos.ofFloored(position);
-            ChunkPosition chunkPosition = new ChunkPosition(blockPos, world.getRegistryKey());
-
-            ChunkManager chunkManager = ChunkManager.getInstance();
-
-            // Check on claim chunk only
-            if (chunkManager.isChunkClaimed(chunkPosition)) {
-                ClaimedChunk chunk = chunkManager.getClaimedChunk(chunkPosition);
-
-                Team owner = null;
-
-                if (chunk != null) {
-                    owner = TeamManager.getInstance().getTeamById(chunk.getOwnerTeamId());
-                }
-
-                // Check permission on the player that caused the explosion
-                boolean allowExplosion = false;
-                if (causingEntity instanceof PlayerEntity player) {
-                    allowExplosion = chunkManager.hasPermission(player, blockPos, world.getRegistryKey(), PermType.BREAK);
-
-                    if (!allowExplosion) {
-                        player.sendMessage(Text.literal("Missing permission to use explosives on this chunk."), true);
-                    }
-                }
-
-                if (!allowExplosion) {
-                    ChunkManager.LOGGER.info("| Explosion intercepted:");
-                    ChunkManager.LOGGER.info("| Position: {}, Team: {}", chunkPosition, owner != null ? owner.getTeamName() : "unknown");
-                    ChunkManager.LOGGER.info("| Source: {}", direct != null ? direct.getClass().getSimpleName() : "unknown");
-                    ChunkManager.LOGGER.info("| Caused by: {}", causingEntity != null ? causingEntity.getName().getLiteralString() : "unknown");
-
-                    cir.setReturnValue(List.of());
-                }
-            }
-        } catch (Exception e) {
-            ChunkManager.LOGGER.error("Error in ExplosionImplMixin: ", e);
-        }
-    }
-
     @Inject(method = "getBlocksToDestroy", at = @At("RETURN"), cancellable = true)
     private void filterBlockToDestroy(CallbackInfoReturnable<List<BlockPos>> cir) {
         try {
@@ -158,16 +91,16 @@ public abstract class ExplosionImplMixin {
                             ClaimedChunk chunk = chunkManager.getClaimedChunk(chunkPosition);
                             Team owner = chunk != null ? TeamManager.getInstance().getTeamById(chunk.getOwnerTeamId()) : null;
 
-                            ChunkManager.LOGGER.info("| Explosion intercepted at:");
-                            ChunkManager.LOGGER.info("| Position: {}, Team: {}", chunkPosition, owner != null ? owner.getTeamName() : "unknown");
-                            ChunkManager.LOGGER.info("| Source: {}, Power {}", direct != null ? direct.getClass().getSimpleName() : "unknown", this.getPower());
-                            ChunkManager.LOGGER.info("| Caused by: {}", causingEntity != null ? causingEntity.getName().getLiteralString() : "unknown");
+                            ChunkManager.LOGGER.debug("| Explosion intercepted at:");
+                            ChunkManager.LOGGER.debug("| Position: {}, Team: {}", chunkPosition, owner != null ? owner.getTeamName() : "unknown");
+                            ChunkManager.LOGGER.debug("| Source: {}, Power {}", direct != null ? direct.getClass().getSimpleName() : "unknown", this.getPower());
+                            ChunkManager.LOGGER.debug("| Caused by: {}", causingEntity != null ? causingEntity.getName().getLiteralString() : "unknown");
 
                             loggedChunks.add(chunkPosition);
                         }
 
                         if (player != null && !notifiedChunks.contains(chunkPosition)) {
-                            player.sendMessage(Text.literal("Missing permission to use explosives on this chunk."), true);
+                            player.sendMessage(Text.literal("Missing permission to use explosives on claimed chunk."), true);
                             notifiedChunks.add(chunkPosition);
                         }
 
