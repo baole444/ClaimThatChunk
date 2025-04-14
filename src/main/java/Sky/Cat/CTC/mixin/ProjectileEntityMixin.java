@@ -4,12 +4,10 @@ import Sky.Cat.CTC.Main;
 import Sky.Cat.CTC.chunk.ChunkManager;
 import Sky.Cat.CTC.chunk.ChunkPosition;
 import Sky.Cat.CTC.permission.PermType;
-import net.minecraft.block.ButtonBlock;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.text.Text;
-import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import org.joml.Math;
@@ -60,9 +58,9 @@ public abstract class ProjectileEntityMixin {
 
                 // Cancel event and remove projectile
                 if (!hasPermission) {
-                    ChunkManager.LOGGER.info("| Projectile intercepted at: ");
-                    ChunkManager.LOGGER.info("| Position: {}", chunkPosition);
-                    ChunkManager.LOGGER.info("| Projectile: {}", projectile.getClass().getSimpleName());
+                    ChunkManager.LOGGER.debug("| Projectile intercepted at: ");
+                    ChunkManager.LOGGER.debug("| Position: {}", chunkPosition);
+                    ChunkManager.LOGGER.debug("| Projectile: {}", projectile.getClass().getSimpleName());
 
                     projectile.discard();
                     ci.cancel();
@@ -70,46 +68,6 @@ public abstract class ProjectileEntityMixin {
             }
         } catch (Exception e) {
             Main.LOGGER.error("Error in ProjectileEntityMixin.stopInteractionsOnCollision: ", e);
-        }
-    }
-
-    @Inject(method = "onBlockHit", at = @At("HEAD"), cancellable = true)
-    private void stopBlockLogicAfterCollision(BlockHitResult blockHitResult, CallbackInfo ci) {
-        try {
-            ProjectileEntity projectile = (ProjectileEntity) (Object) this;
-
-            if (projectile == null) {
-                Main.LOGGER.error("Projectile was cleared on this check!");
-            }
-
-            // Processed by server only.
-            if (projectile.getWorld().isClient()) return;
-
-            BlockPos blockPos = blockHitResult.getBlockPos();
-
-            ChunkManager chunkManager = ChunkManager.getInstance();
-            ChunkPosition chunkPosition = new ChunkPosition(blockPos, projectile.getWorld().getRegistryKey());
-
-            if (chunkManager.isChunkClaimed(chunkPosition)) {
-                Entity owner = this.getOwner();
-
-                boolean hasPermission = false;
-
-                if (owner instanceof PlayerEntity player) {
-
-                    hasPermission = chunkManager.hasPermission(player, blockPos, projectile. getWorld().getRegistryKey(), PermType.INTERACT);
-                    ChunkManager.LOGGER.info("Permission is {}", hasPermission);
-                }
-
-                if (!hasPermission) {
-                    ChunkManager.LOGGER.info("| Block logic for projectile intercepted:");
-                    ChunkManager.LOGGER.info("| Position: {}", chunkPosition);
-
-                    ci.cancel();
-                }
-            }
-        } catch (Exception e) {
-            Main.LOGGER.error("Error in ProjectEntityMixin.stopBlockLogicAfterCollision: ", e);
         }
     }
 }
