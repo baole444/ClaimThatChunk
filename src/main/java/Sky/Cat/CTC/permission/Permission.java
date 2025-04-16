@@ -22,6 +22,15 @@ public class Permission {
     // Allow interacting with mechanisms on claimed chunk.
     private boolean allowInteract;
 
+    // Allow killing friendly entity on claimed chunk.
+    private boolean allowKillFriendly;
+
+    // Allow killing hostile entity on claimed chunk.
+    private boolean allowKillHostile;
+
+    // Allow killing teammate on claimed chunk.
+    private boolean allowKillTeammate;
+
     // Allow modifying fields in permission.
     private boolean allowModifyPermission;
 
@@ -38,9 +47,12 @@ public class Permission {
             Codec.BOOL.fieldOf("build").forGetter(p -> p.hasPermission(PermType.BUILD)),
             Codec.BOOL.fieldOf("break").forGetter(p -> p.hasPermission(PermType.BREAK)),
             Codec.BOOL.fieldOf("interact").forGetter(p -> p.hasPermission(PermType.INTERACT)),
+            Codec.BOOL.fieldOf("killFriendly").forGetter(p -> p.hasPermission(PermType.KILL_FRIENDLY)),
+            Codec.BOOL.fieldOf("killHostile").forGetter(p -> p.hasPermission(PermType.KILL_HOSTILE)),
+            Codec.BOOL.fieldOf("killTeammate").forGetter(p -> p.hasPermission(PermType.KILL_TEAMMATE)),
             Codec.BOOL.fieldOf("modifyPermission").forGetter(p -> p.hasPermission(PermType.MODIFY_PERMISSION)),
             Codec.BOOL.fieldOf("disband").forGetter(p -> p.hasPermission(PermType.DISBAND))
-    ).apply(instance, (invite, kick, claim, build, brk, interact, modifyPerm, disband) -> {
+    ).apply(instance, (invite, kick, claim, build, brk, interact, killFriendly, killHostile, killTeammate, modifyPerm, disband) -> {
         Permission permission = new Permission();
 
         // Apply values to new permission instance.
@@ -50,6 +62,9 @@ public class Permission {
         permission.setPermission(PermType.BUILD, build);
         permission.setPermission(PermType.BREAK, brk);
         permission.setPermission(PermType.INTERACT, interact);
+        permission.setPermission(PermType.KILL_FRIENDLY, killFriendly);
+        permission.setPermission(PermType.KILL_HOSTILE, killHostile);
+        permission.setPermission(PermType.KILL_TEAMMATE, killTeammate);
         permission.setPermission(PermType.MODIFY_PERMISSION, modifyPerm);
         permission.setPermission(PermType.DISBAND, disband);
 
@@ -67,6 +82,9 @@ public class Permission {
         allowBuild = false;
         allowBreak = false;
         allowInteract = false;
+        allowKillFriendly = false;
+        allowKillHostile = false;
+        allowKillTeammate = false;
         allowModifyPermission = false;
         allowDisband = false;
     }
@@ -84,6 +102,9 @@ public class Permission {
             case BUILD -> {return allowBuild;}
             case BREAK -> {return allowBreak;}
             case INTERACT -> {return allowInteract;}
+            case KILL_FRIENDLY -> {return allowKillFriendly;}
+            case KILL_HOSTILE -> {return allowKillHostile;}
+            case KILL_TEAMMATE -> {return allowKillTeammate;}
             case MODIFY_PERMISSION -> {return allowModifyPermission;}
             case DISBAND -> {return allowDisband;}
             default -> {
@@ -106,6 +127,9 @@ public class Permission {
             case BUILD -> this.allowBuild = value;
             case BREAK -> this.allowBreak = value;
             case INTERACT -> this.allowInteract = value;
+            case KILL_FRIENDLY -> this.allowKillFriendly = value;
+            case KILL_HOSTILE -> this.allowKillHostile = value;
+            case KILL_TEAMMATE -> this.allowKillTeammate = value;
             case MODIFY_PERMISSION -> this.allowModifyPermission = value;
             case DISBAND -> this.allowDisband = value;
             default -> {

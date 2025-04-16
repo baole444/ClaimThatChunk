@@ -7,6 +7,9 @@ public enum PermType {
     BUILD,
     BREAK,
     INTERACT,
+    KILL_FRIENDLY,
+    KILL_HOSTILE,
+    KILL_TEAMMATE,
     MODIFY_PERMISSION,
     DISBAND
 }

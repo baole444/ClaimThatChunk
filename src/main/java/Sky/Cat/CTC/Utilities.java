@@ -37,8 +37,11 @@ public class Utilities {
         if (permission.hasPermission(PermType.BUILD)) flags |= 8;
         if (permission.hasPermission(PermType.BREAK)) flags |= 16;
         if (permission.hasPermission(PermType.INTERACT)) flags |= 32;
-        if (permission.hasPermission(PermType.MODIFY_PERMISSION)) flags |= 64;
-        if (permission.hasPermission(PermType.DISBAND)) flags |= 128;
+        if (permission.hasPermission(PermType.KILL_FRIENDLY)) flags |= 64;
+        if (permission.hasPermission(PermType.KILL_HOSTILE)) flags |= 128;
+        if (permission.hasPermission(PermType.KILL_TEAMMATE)) flags |= 256;
+        if (permission.hasPermission(PermType.MODIFY_PERMISSION)) flags |= 512;
+        if (permission.hasPermission(PermType.DISBAND)) flags |= 1024;
 
         return flags;
     }
@@ -55,8 +58,11 @@ public class Utilities {
         permission.setPermission(PermType.BUILD, (flags & 8) != 0);
         permission.setPermission(PermType.BREAK, (flags & 16) != 0);
         permission.setPermission(PermType.INTERACT, (flags & 32) != 0);
-        permission.setPermission(PermType.MODIFY_PERMISSION, (flags & 64) != 0);
-        permission.setPermission(PermType.DISBAND, (flags & 128) != 0);
+        permission.setPermission(PermType.KILL_FRIENDLY, (flags & 64) != 0);
+        permission.setPermission(PermType.KILL_HOSTILE, (flags & 128) != 0);
+        permission.setPermission(PermType.KILL_TEAMMATE, (flags & 256) != 0);
+        permission.setPermission(PermType.MODIFY_PERMISSION, (flags & 512) != 0);
+        permission.setPermission(PermType.DISBAND, (flags & 1024) != 0);
 
         return permission;
     }
